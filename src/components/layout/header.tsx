@@ -4,15 +4,28 @@ import React, { useRef, useEffect, useState } from 'react';
 import { SidebarTrigger } from '../ui/sidebar';
 import { Separator } from '../ui/separator';
 import { RouteTabs } from './route-tabs';
+import { Breadcrumbs } from '../breadcrumbs';
 import SearchInput from '../search-input';
 import { UserNav } from './user-nav';
-import { ThemeSelector } from '../themes/theme-selector';
-import { ThemeModeToggle } from '../themes/theme-mode-toggle';
+import { SettingsPanel } from './settings-panel';
+import { useUserPreferencesStore } from '@/lib/user-preferences-store';
+import { Button } from '../ui/button';
+import { Icons } from '../icons';
 
 export default function Header() {
   const headerRef = useRef<HTMLElement>(null);
   const rightActionsRef = useRef<HTMLDivElement>(null);
   const [rightActionsWidth, setRightActionsWidth] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { enableTabs } = useUserPreferencesStore();
+
+  // 确保在客户端 hydration 完成后再渲染
+  useEffect(() => {
+    setMounted(true);
+    // 触发 Zustand store 的 hydration
+    useUserPreferencesStore.persist.rehydrate();
+  }, []);
 
   useEffect(() => {
     if (!rightActionsRef.current) return;
@@ -56,7 +69,11 @@ export default function Header() {
                 : '100%'
           }}
         >
-          <RouteTabs availableWidth={rightActionsWidth} />
+          {mounted && enableTabs ? (
+            <RouteTabs availableWidth={rightActionsWidth} />
+          ) : mounted ? (
+            <Breadcrumbs />
+          ) : null}
         </div>
       </div>
 
@@ -70,9 +87,18 @@ export default function Header() {
           <SearchInput />
         </div>
         <UserNav />
-        <ThemeModeToggle />
-        <ThemeSelector />
+        <Button
+          variant='ghost'
+          size='icon'
+          className='h-9 w-9'
+          onClick={() => setSettingsOpen(true)}
+        >
+          <Icons.settings className='h-4 w-4' />
+          <span className='sr-only'>设置</span>
+        </Button>
       </div>
+
+      <SettingsPanel open={settingsOpen} onOpenChange={setSettingsOpen} />
     </header>
   );
 }

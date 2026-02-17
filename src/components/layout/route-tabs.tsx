@@ -73,16 +73,24 @@ function TabItem({
           {Icon && <Icon className='size-3.5 shrink-0' />}
           <span className='whitespace-nowrap'>{tab.title}</span>
           {tab.closable !== false && (
-            <button
+            <span
               onClick={handleClose}
+              onMouseDown={(e) => e.stopPropagation()}
               className={cn(
                 'ml-1 rounded-sm p-0.5 opacity-0 transition-opacity group-hover:opacity-100',
-                'hover:bg-muted'
+                'hover:bg-muted inline-flex cursor-pointer items-center justify-center'
               )}
-              onMouseDown={(e) => e.stopPropagation()}
+              role='button'
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleClose(e as unknown as React.MouseEvent);
+                }
+              }}
             >
               <IconX className='size-3' />
-            </button>
+            </span>
           )}
         </button>
       </ContextMenuTrigger>
