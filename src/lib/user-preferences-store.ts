@@ -25,18 +25,28 @@ export interface UserPreferences {
    * 'background': 背景样式（有背景色）
    */
   breadcrumbStyle: 'regular' | 'background';
+
+  /**
+   * 侧边栏折叠模式
+   * 默认值: 'icon'
+   * 'icon': 图标模式，折叠时只显示图标，子菜单隐藏
+   * 'expanded-submenu': 展开子项模式，折叠时显示图标和所有子菜单项
+   */
+  sidebarCollapseMode: 'icon' | 'expanded-submenu';
 }
 
 interface UserPreferencesStore extends UserPreferences {
   setEnableTabs: (value: boolean) => void;
   setShowBreadcrumbs: (value: boolean) => void;
   setBreadcrumbStyle: (value: 'regular' | 'background') => void;
+  setSidebarCollapseMode: (value: 'icon' | 'expanded-submenu') => void;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   enableTabs: true,
   showBreadcrumbs: true,
-  breadcrumbStyle: 'regular'
+  breadcrumbStyle: 'regular',
+  sidebarCollapseMode: 'icon'
 };
 
 export const useUserPreferencesStore = create<UserPreferencesStore>()(
@@ -54,6 +64,10 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
 
       setBreadcrumbStyle: (value: 'regular' | 'background') => {
         set({ breadcrumbStyle: value });
+      },
+
+      setSidebarCollapseMode: (value: 'icon' | 'expanded-submenu') => {
+        set({ sidebarCollapseMode: value });
       }
     }),
     {

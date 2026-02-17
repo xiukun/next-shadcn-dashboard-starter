@@ -32,9 +32,11 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
     enableTabs,
     showBreadcrumbs,
     breadcrumbStyle,
+    sidebarCollapseMode,
     setEnableTabs,
     setShowBreadcrumbs,
-    setBreadcrumbStyle
+    setBreadcrumbStyle,
+    setSidebarCollapseMode
   } = useUserPreferencesStore();
 
   // 确保在客户端 hydration 完成后再渲染
@@ -64,6 +66,55 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
 
           {/* 布局标签页 */}
           <TabsContent value='layout' className='mt-6 space-y-6'>
+            {/* 侧边栏相关设置 */}
+            <div className='space-y-4'>
+              <div className='space-y-2'>
+                <h3 className='text-sm font-medium'>侧边栏</h3>
+              </div>
+
+              <div className='space-y-2'>
+                <Label>折叠效果</Label>
+                <p className='text-muted-foreground text-sm'>
+                  选择侧边栏折叠时的显示方式
+                </p>
+                <RadioGroup
+                  value={sidebarCollapseMode}
+                  onValueChange={(value) =>
+                    setSidebarCollapseMode(value as 'icon' | 'expanded-submenu')
+                  }
+                >
+                  <div className='flex items-center space-x-2'>
+                    <RadioGroupItem value='icon' id='icon-mode' />
+                    <Label
+                      htmlFor='icon-mode'
+                      className='cursor-pointer font-normal'
+                    >
+                      图标模式
+                    </Label>
+                  </div>
+                  <div className='flex items-center space-x-2'>
+                    <RadioGroupItem
+                      value='expanded-submenu'
+                      id='expanded-submenu-mode'
+                    />
+                    <Label
+                      htmlFor='expanded-submenu-mode'
+                      className='cursor-pointer font-normal'
+                    >
+                      展开子项模式
+                    </Label>
+                  </div>
+                </RadioGroup>
+                <p className='text-muted-foreground text-xs'>
+                  图标模式：折叠时只显示图标，点击展开子菜单
+                  <br />
+                  展开子项模式：折叠时显示图标和所有子菜单项
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
             {/* 面包屑相关设置 */}
             <div className='space-y-4'>
               <div className='space-y-2'>
