@@ -1,4 +1,4 @@
-# api-client 规范
+# api-request 规范
 
 ## 目的
 

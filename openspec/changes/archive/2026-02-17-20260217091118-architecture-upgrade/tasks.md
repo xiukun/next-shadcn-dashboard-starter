@@ -43,7 +43,7 @@
 ### 阶段 6: 文档和清理
 
 - [x] 6.1 更新 `README.md` 说明新的架构（已创建 README-ARCHITECTURE.md）
-- [x] 6.2 创建 `docs/api-client.md` 使用文档
+- [x] 6.2 创建 `docs/api-request.md` 使用文档
 - [x] 6.3 验证所有功能正常工作
 - [x] 6.4 运行 lint 和类型检查
 

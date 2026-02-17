@@ -8,7 +8,14 @@ import {
 } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import type { ApiError, ApiResponse } from './types';
-import { apiClient, type KyOptions } from './client';
+import { apiRequest, type KyOptions } from './request';
+
+/**
+ * React Query Hooks - 仅用于客户端组件
+ *
+ * 注意：这些hooks只能在客户端组件中使用（'use client'）
+ * 服务端组件应直接使用 get/post/put/delete 函数
+ */
 
 export function useApiQuery<TData = unknown, TError = ApiError>(
   queryKey: QueryKey,
@@ -19,7 +26,7 @@ export function useApiQuery<TData = unknown, TError = ApiError>(
   return useQuery<TData, TError>({
     queryKey,
     queryFn: async () => {
-      const response = await apiClient.get(url, options).json<TData>();
+      const response = await apiRequest.get(url, options).json<TData>();
       return response;
     },
     ...options
@@ -46,22 +53,22 @@ export function useApiMutation<
 
       switch (method) {
         case 'POST':
-          response = await apiClient
+          response = await apiRequest
             .post(url, { json: variables })
             .json<ApiResponse<TData>>();
           break;
         case 'PUT':
-          response = await apiClient
+          response = await apiRequest
             .put(url, { json: variables })
             .json<ApiResponse<TData>>();
           break;
         case 'PATCH':
-          response = await apiClient
+          response = await apiRequest
             .patch(url, { json: variables })
             .json<ApiResponse<TData>>();
           break;
         case 'DELETE':
-          response = await apiClient
+          response = await apiRequest
             .delete(url, { json: variables })
             .json<ApiResponse<TData>>();
           break;

@@ -19,12 +19,12 @@
 - ✅ 创建 `.npmrc` 配置文件
 - ✅ 更新所有脚本命令
 
-### 3. HTTP 客户端架构
+### 3. HTTP 请求工具架构
 
-创建了基于 `ky` 的统一 HTTP 客户端：
+创建了基于 `ky` 的统一 HTTP 请求工具，**同时支持服务端渲染（SSR）和客户端渲染**：
 
-- `src/lib/api/client.ts` - HTTP 客户端封装
-- `src/lib/api/hooks.ts` - React Query hooks 封装
+- `src/lib/api/request.ts` - HTTP 请求封装（支持 SSR 和客户端）
+- `src/lib/api/hooks.ts` - React Query hooks 封装（仅客户端）
 - `src/lib/api/types.ts` - TypeScript 类型定义
 - `src/lib/api/errors.ts` - 统一错误处理
 - `src/lib/api/mock-handlers.ts` - Mock 数据支持
@@ -61,13 +61,27 @@ pnpm install
 pnpm dev
 ```
 
-### 使用新的 API 客户端
+### 使用新的 API 请求工具
 
-参考 `docs/api-client.md` 获取详细使用文档。
+参考 `docs/api-request.md` 获取详细使用文档。
 
-### 示例：使用 React Query Hooks
+### 示例：服务端渲染（推荐）
 
 ```typescript
+import { fetchProducts } from '@/features/products/api/products';
+
+export default async function ProductsPage() {
+  const products = await fetchProducts({ page: 1, limit: 10 });
+  
+  return <ProductList data={products.data} total={products.total} />;
+}
+```
+
+### 示例：客户端渲染（复杂交互场景）
+
+```typescript
+'use client';
+
 import { useProducts } from '@/features/products/api/products';
 
 function ProductsList() {
@@ -89,5 +103,5 @@ function ProductsList() {
 
 ## 相关文档
 
-- [API Client 使用文档](./docs/api-client.md)
+- [API Client 使用文档](./docs/api-request.md)
 - [OpenSpec Change 提案](./openspec/changes/20260217091118-architecture-upgrade/proposal.md)
