@@ -4,6 +4,7 @@ import { dark } from '@clerk/themes';
 import { useTheme } from 'next-themes';
 import React from 'react';
 import { ActiveThemeProvider } from '../themes/active-theme';
+import { ReactQueryProvider } from '@/lib/react-query/provider';
 
 export default function Providers({
   activeThemeValue,
@@ -18,13 +19,15 @@ export default function Providers({
   return (
     <>
       <ActiveThemeProvider initialTheme={activeThemeValue}>
-        <ClerkProvider
-          appearance={{
-            baseTheme: resolvedTheme === 'dark' ? dark : undefined
-          }}
-        >
-          {children}
-        </ClerkProvider>
+        <ReactQueryProvider>
+          <ClerkProvider
+            appearance={{
+              baseTheme: resolvedTheme === 'dark' ? dark : undefined
+            }}
+          >
+            {children}
+          </ClerkProvider>
+        </ReactQueryProvider>
       </ActiveThemeProvider>
     </>
   );

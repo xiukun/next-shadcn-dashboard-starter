@@ -68,6 +68,14 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
+    title: 'Product (Client)',
+    url: '/dashboard/client-product',
+    icon: 'product',
+    shortcut: ['p', 'c'],
+    isActive: false,
+    items: []
+  },
+  {
     title: 'Kanban',
     url: '/dashboard/kanban',
     icon: 'kanban',

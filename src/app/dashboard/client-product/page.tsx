@@ -1,0 +1,32 @@
+import PageContainer from '@/components/layout/page-container';
+import { buttonVariants } from '@/components/ui/button';
+import ProductListingClient from '@/features/products/components/product-listing-client';
+import { cn } from '@/lib/utils';
+import { IconPlus } from '@tabler/icons-react';
+import Link from 'next/link';
+import { productInfoContent } from '@/config/infoconfig';
+
+export const metadata = {
+  title: 'Dashboard: Products (Client)'
+};
+
+export default function Page() {
+  return (
+    <PageContainer
+      scrollable={false}
+      pageTitle='Products'
+      pageDescription='Manage products (Client side with React Query)'
+      infoContent={productInfoContent}
+      pageHeaderAction={
+        <Link
+          href='/dashboard/client-product/new'
+          className={cn(buttonVariants(), 'text-xs md:text-sm')}
+        >
+          <IconPlus className='mr-2 h-4 w-4' /> Add New
+        </Link>
+      }
+    >
+      <ProductListingClient />
+    </PageContainer>
+  );
+}
