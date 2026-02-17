@@ -8,8 +8,8 @@ import React, {
   useState
 } from 'react';
 import { usePathname } from 'next/navigation';
-import { useUserPreferencesStore } from '@/lib/user-preferences-store';
-import { useRouteTabsStore } from '@/lib/route-tabs-store';
+import { useUserPreferencesStore } from '@/stores/user-preferences-store';
+import { useRouteTabsStore } from '@/stores/route-tabs-store';
 import KeepAliveRoute from './keep-alive-route';
 
 /**

@@ -35,7 +35,7 @@
 
 - `src/components/layout/route-tabs.tsx` - 核心 Tabs 组件，实现标签页显示、溢出处理、右键菜单
 - `src/hooks/use-route-tabs.ts` - 管理标签页状态的 React Hook，监听路由变化自动创建/激活 Tab
-- `src/lib/route-tabs-store.ts` - 标签页状态管理（使用 Zustand + persist 中间件）
+- `src/stores/route-tabs-store.ts` - 标签页状态管理（使用 Zustand + persist 中间件）
 
 ### 删除文件
 

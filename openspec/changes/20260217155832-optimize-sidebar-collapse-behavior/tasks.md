@@ -16,7 +16,7 @@
 
 ### 任务 1.1: 扩展 UserPreferences 接口
 - **状态**: ✅ 已完成
-- **文件**: `src/lib/user-preferences-store.ts`
+- **文件**: `src/stores/user-preferences-store.ts`
 - **描述**: 
   - 在 `UserPreferences` 接口中新增 `sidebarCollapseMode` 字段
   - 类型为 `'icon' | 'expanded-submenu'`
@@ -28,7 +28,7 @@
 
 ### 任务 1.2: 扩展 UserPreferencesStore 接口
 - **状态**: ✅ 已完成
-- **文件**: `src/lib/user-preferences-store.ts`
+- **文件**: `src/stores/user-preferences-store.ts`
 - **描述**: 
   - 在 `UserPreferencesStore` 接口中新增 `setSidebarCollapseMode` 方法
 - **验收标准**:
@@ -37,7 +37,7 @@
 
 ### 任务 1.3: 实现 setSidebarCollapseMode 方法
 - **状态**: ✅ 已完成
-- **文件**: `src/lib/user-preferences-store.ts`
+- **文件**: `src/stores/user-preferences-store.ts`
 - **描述**: 
   - 在 store 实现中添加 `setSidebarCollapseMode` 方法
   - 更新 `DEFAULT_PREFERENCES` 对象，添加 `sidebarCollapseMode: 'icon'`

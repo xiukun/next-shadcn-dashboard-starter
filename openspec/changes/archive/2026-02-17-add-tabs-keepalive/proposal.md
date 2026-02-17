@@ -54,7 +54,7 @@
 
 ### 2. 扩展用户偏好设置
 
-- **文件**: `src/lib/user-preferences-store.ts`
+- **文件**: `src/stores/user-preferences-store.ts`
 - **新增字段**:
   - `enableKeepAlive: boolean` - 是否启用 Keep-Alive（默认值：`true`）
   - `setEnableKeepAlive: (value: boolean) => void` - 设置方法
@@ -75,7 +75,7 @@
 
 ### 5. 路由缓存管理
 
-- **文件**: `src/lib/route-tabs-store.ts`（可选扩展）
+- **文件**: `src/stores/route-tabs-store.ts`（可选扩展）
 - **考虑**:
   - 当标签页关闭时，清理对应的缓存
   - 当缓存数量达到上限时，清理最久未使用的缓存
@@ -86,7 +86,7 @@
 
 1. `src/components/layout/keep-alive-provider.tsx` - 新建，核心缓存逻辑
 2. `src/components/layout/keep-alive-route.tsx` - 新建，单个路由缓存管理
-3. `src/lib/user-preferences-store.ts` - 扩展状态字段
+3. `src/stores/user-preferences-store.ts` - 扩展状态字段
 4. `src/components/layout/settings-panel.tsx` - 新增设置选项
 5. `src/app/dashboard/layout.tsx` - 集成 Keep-Alive Provider
 

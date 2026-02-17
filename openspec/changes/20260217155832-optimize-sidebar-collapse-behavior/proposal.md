@@ -32,7 +32,7 @@
 
 ### 1. 扩展用户偏好设置 Store
 
-- **文件**: `src/lib/user-preferences-store.ts`
+- **文件**: `src/stores/user-preferences-store.ts`
 - **新增字段**:
   - `sidebarCollapseMode`: `'icon' | 'expanded-submenu'`
     - `'icon'`: 图标模式（默认），折叠时只显示图标，点击展开子菜单
@@ -69,7 +69,7 @@
 
 ### 受影响的组件
 
-1. `src/lib/user-preferences-store.ts` - 新增状态字段和方法
+1. `src/stores/user-preferences-store.ts` - 新增状态字段和方法
 2. `src/components/layout/app-sidebar.tsx` - 应用折叠模式设置，集成 HoverCard
 3. `src/components/layout/settings-panel.tsx` - 新增设置选项
 4. `src/components/ui/hover-card.tsx` - 使用 HoverCard 组件显示子菜单

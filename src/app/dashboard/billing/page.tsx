@@ -37,7 +37,6 @@ export default function BillingPage() {
       pageDescription={`Manage your subscription and usage limits for ${organization?.name}`}
     >
       <div className='space-y-6'>
-        {/* Info Alert */}
         <Alert>
           <Info className='h-4 w-4' />
           <AlertDescription>
@@ -46,7 +45,6 @@ export default function BillingPage() {
           </AlertDescription>
         </Alert>
 
-        {/* Clerk Pricing Table */}
         <Card>
           <CardHeader>
             <CardTitle>Available Plans</CardTitle>
@@ -56,7 +54,11 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent>
             <div className='mx-auto max-w-4xl'>
-              <PricingTable for='organization' />
+              {/* <PricingTable for='organization' /> */}
+              <p className='text-muted-foreground py-8 text-center'>
+                Billing feature is currently disabled. Please enable it in Clerk
+                Dashboard to view pricing plans.
+              </p>
             </div>
           </CardContent>
         </Card>

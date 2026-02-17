@@ -8,7 +8,7 @@
 ### 阶段 1: 状态管理基础
 
 - [x] 1.1 创建用户偏好设置 Store
-  - 文件: `src/lib/user-preferences-store.ts`
+  - 文件: `src/stores/user-preferences-store.ts`
   - 使用 Zustand + persist
   - 定义接口：`enableTabs`, `showBreadcrumbs`, `breadcrumbStyle`
   - 默认值：`enableTabs: true`, `showBreadcrumbs: true`, `breadcrumbStyle: 'regular'`

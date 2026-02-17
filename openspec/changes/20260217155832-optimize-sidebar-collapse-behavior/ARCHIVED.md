@@ -16,7 +16,7 @@
 
 ### 1. 用户偏好设置扩展
 
-- **文件**: `src/lib/user-preferences-store.ts`
+- **文件**: `src/stores/user-preferences-store.ts`
 - **变更**:
   - 新增 `sidebarCollapseMode` 字段：`'icon' | 'expanded-submenu'`
   - 新增 `setSidebarCollapseMode` 方法
@@ -89,7 +89,7 @@ if (shouldUseHoverOnly && hasSubmenu) {
 
 ## 文件变更清单
 
-1. `src/lib/user-preferences-store.ts` - 扩展用户偏好设置
+1. `src/stores/user-preferences-store.ts` - 扩展用户偏好设置
 2. `src/components/layout/app-sidebar.tsx` - 实现折叠模式逻辑
 3. `src/components/layout/settings-panel.tsx` - 添加设置选项
 4. `openspec/changes/20260217155832-optimize-sidebar-collapse-behavior/` - OpenSpec 文档

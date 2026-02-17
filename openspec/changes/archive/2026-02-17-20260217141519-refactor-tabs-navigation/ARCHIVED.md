@@ -54,7 +54,7 @@
 ### 文件变更清单
 
 #### 新增文件
-- ✅ `src/lib/route-tabs-store.ts` - Zustand store 管理标签页状态
+- ✅ `src/stores/route-tabs-store.ts` - Zustand store 管理标签页状态
 - ✅ `src/hooks/use-route-tabs.ts` - React Hook 封装路由同步逻辑
 - ✅ `src/components/layout/route-tabs.tsx` - Tabs UI 组件
 
@@ -172,7 +172,7 @@
 - 提案：`proposal.md`
 - 任务清单：`tasks.md`
 - 实现文件：
-  - `src/lib/route-tabs-store.ts`
+  - `src/stores/route-tabs-store.ts`
   - `src/hooks/use-route-tabs.ts`
   - `src/components/layout/route-tabs.tsx`
   - `src/components/layout/header.tsx`

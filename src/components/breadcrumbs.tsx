@@ -8,7 +8,7 @@ import {
   BreadcrumbSeparator
 } from '@/components/ui/breadcrumb';
 import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
-import { useUserPreferencesStore } from '@/lib/user-preferences-store';
+import { useUserPreferencesStore } from '@/stores/user-preferences-store';
 import { IconSlash } from '@tabler/icons-react';
 import { Fragment, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';

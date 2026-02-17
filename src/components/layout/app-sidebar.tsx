@@ -39,7 +39,7 @@ import { navItems } from '@/config/nav-config';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useOrganization, useUser } from '@clerk/nextjs';
 import { useFilteredNavItems } from '@/hooks/use-nav';
-import { useUserPreferencesStore } from '@/lib/user-preferences-store';
+import { useUserPreferencesStore } from '@/stores/user-preferences-store';
 import {
   IconBell,
   IconChevronRight,

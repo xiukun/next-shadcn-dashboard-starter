@@ -38,7 +38,7 @@
 
 ### 2. 新增用户偏好设置 Store
 
-- **位置**: `src/lib/user-preferences-store.ts`
+- **位置**: `src/stores/user-preferences-store.ts`
 - **功能**:
   - 使用 Zustand + persist 存储用户偏好
   - 管理以下设置：
@@ -110,7 +110,7 @@ interface UserPreferences {
 ### 新增的文件
 
 1. `src/components/layout/settings-panel.tsx` - 设置面板主组件
-2. `src/lib/user-preferences-store.ts` - 用户偏好状态管理
+2. `src/stores/user-preferences-store.ts` - 用户偏好状态管理
 3. `src/components/themes/theme-selector-inline.tsx` - 内联主题选择器组件（用于设置面板）
 
 ### 依赖关系

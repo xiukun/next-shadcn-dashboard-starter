@@ -8,7 +8,7 @@
 
 ### 阶段 1: 状态管理基础
 
-- [x] 1.1 创建 `src/lib/route-tabs-store.ts`，使用 Zustand 定义标签页状态管理
+- [x] 1.1 创建 `src/stores/route-tabs-store.ts`，使用 Zustand 定义标签页状态管理
 - [x] 1.2 定义 `RouteTab` 接口（id, title, url, icon, closable）
 - [x] 1.3 实现 `addTab`, `removeTab`, `setActiveTab`, `closeOtherTabs`, `closeAllTabs`, `hasTab` 方法
 - [x] 1.4 添加默认标签页（`/dashboard/overview`）初始化逻辑
@@ -134,7 +134,7 @@ useEffect(() => {
 
 所有任务已完成：
 
-- ✅ 创建 Zustand store (`src/lib/route-tabs-store.ts`) 管理标签页状态
+- ✅ 创建 Zustand store (`src/stores/route-tabs-store.ts`) 管理标签页状态
   - 实现标签页数量限制（最多 8 个可关闭的标签页）
   - 使用 persist 中间件实现状态持久化
 - ✅ 创建 `use-route-tabs` Hook (`src/hooks/use-route-tabs.ts`) 封装路由同步逻辑
@@ -158,7 +158,7 @@ useEffect(() => {
 
 **变更文件**:
 
-- 新增: `src/lib/route-tabs-store.ts`
+- 新增: `src/stores/route-tabs-store.ts`
 - 新增: `src/hooks/use-route-tabs.ts`
 - 新增: `src/components/layout/route-tabs.tsx`
 - 修改: `src/components/layout/header.tsx`

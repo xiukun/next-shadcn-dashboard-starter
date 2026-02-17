@@ -16,7 +16,7 @@
 
 ### 任务 1.1：扩展用户偏好设置 Store
 - **状态**: ✅
-- **文件**: `src/lib/user-preferences-store.ts`
+- **文件**: `src/stores/user-preferences-store.ts`
 - **内容**:
   - 添加 `enableKeepAlive: boolean` 字段（默认值：`true`）
   - 添加 `setEnableKeepAlive: (value: boolean) => void` 方法

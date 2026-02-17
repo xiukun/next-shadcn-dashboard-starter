@@ -81,6 +81,6 @@ Keep-Alive 缓存存在于**内存**中，刷新页面后会丢失（但偏好�
 - Keep-Alive Provider：`src/components/layout/keep-alive-provider.tsx`
 - 单路由 Keep-Alive：`src/components/layout/keep-alive-route.tsx`
 - Dashboard 集成：`src/app/dashboard/layout.tsx`
-- 偏好设置：`src/lib/user-preferences-store.ts`（`enableKeepAlive`）
+- 偏好设置：`src/stores/user-preferences-store.ts`（`enableKeepAlive`）
 - 设置面板：`src/components/layout/settings-panel.tsx`
 

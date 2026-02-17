@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouteTabs } from '@/hooks/use-route-tabs';
-import { useRouteTabsStore } from '@/lib/route-tabs-store';
+import { useRouteTabsStore } from '@/stores/route-tabs-store';
 import { Icons } from '@/components/icons';
 import {
   ContextMenu,
@@ -20,7 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { IconX, IconChevronDown } from '@tabler/icons-react';
-import type { RouteTab } from '@/lib/route-tabs-store';
+import type { RouteTab } from '@/stores/route-tabs-store';
 
 /**
  * 单个标签页项

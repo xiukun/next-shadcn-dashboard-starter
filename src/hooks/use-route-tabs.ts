@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useRouteTabsStore, type RouteTab } from '@/lib/route-tabs-store';
+import { useRouteTabsStore, type RouteTab } from '@/stores/route-tabs-store';
 import { navItems } from '@/config/nav-config';
 import type { NavItem } from '@/types';
 

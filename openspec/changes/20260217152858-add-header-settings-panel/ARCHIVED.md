@@ -37,7 +37,7 @@
 
 ### ✅ 新增文件
 
-1. `src/lib/user-preferences-store.ts` - 用户偏好状态管理
+1. `src/stores/user-preferences-store.ts` - 用户偏好状态管理
 2. `src/components/layout/settings-panel.tsx` - 设置面板主组件
 3. `src/components/themes/theme-selector-inline.tsx` - 内联主题选择器组件
 

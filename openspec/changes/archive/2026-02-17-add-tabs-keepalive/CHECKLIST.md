@@ -26,7 +26,7 @@
   - ✅ 添加 `enableKeepAlive: boolean` 字段（默认值：`true`）
   - ✅ 添加 `setEnableKeepAlive` 方法
   - ✅ 设置持久化存储正常工作
-- **文件**: `src/lib/user-preferences-store.ts`（修改）
+- **文件**: `src/stores/user-preferences-store.ts`（修改）
 
 ### 4. 设置面板 UI 扩展
 - **验收标准**：
@@ -49,7 +49,7 @@
 2. `src/components/layout/keep-alive-route.tsx` - Keep-Alive Route 组件
 
 ### 修改文件
-1. `src/lib/user-preferences-store.ts` - 添加 `enableKeepAlive` 字段和方法
+1. `src/stores/user-preferences-store.ts` - 添加 `enableKeepAlive` 字段和方法
 2. `src/components/layout/settings-panel.tsx` - 添加 Keep-Alive 开关
 3. `src/app/dashboard/layout.tsx` - 集成 KeepAliveProvider
 

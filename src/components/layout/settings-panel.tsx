@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { useUserPreferencesStore } from '@/lib/user-preferences-store';
+import { useUserPreferencesStore } from '@/stores/user-preferences-store';
 import { ThemeSelectorInline } from '@/components/themes/theme-selector-inline';
 import { ThemeModeToggle } from '@/components/themes/theme-mode-toggle';
 import { Separator } from '@/components/ui/separator';

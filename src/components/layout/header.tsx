@@ -8,8 +8,8 @@ import { Breadcrumbs } from '../breadcrumbs';
 import SearchInput from '../search-input';
 import { UserNav } from './user-nav';
 import { SettingsPanel } from './settings-panel';
-import { useUserPreferencesStore } from '@/lib/user-preferences-store';
-import { useRouteTabsStore } from '@/lib/route-tabs-store';
+import { useUserPreferencesStore } from '@/stores/user-preferences-store';
+import { useRouteTabsStore } from '@/stores/route-tabs-store';
 import { Button } from '../ui/button';
 import { Icons } from '../icons';
 
