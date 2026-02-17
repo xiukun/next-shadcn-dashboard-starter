@@ -72,7 +72,7 @@ import { fetchProducts } from '@/features/products/api/products';
 
 export default async function ProductsPage() {
   const products = await fetchProducts({ page: 1, limit: 10 });
-  
+
   return <ProductList data={products.data} total={products.total} />;
 }
 ```

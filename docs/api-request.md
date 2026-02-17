@@ -21,7 +21,7 @@ export default async function ProductPage() {
   const products = await get<Product[]>('/api/products', {
     headers: { Authorization: `Bearer ${token}` }
   });
-  
+
   return <ProductList data={products.data} />;
 }
 ```
@@ -36,7 +36,10 @@ const response = await apiRequest.get('/api/products').json();
 
 // 使用便捷方法（自动从localStorage获取token）
 const data = await get<Product[]>('/api/products');
-const result = await post<Product, CreateProductDto>('/api/products', productData);
+const result = await post<Product, CreateProductDto>(
+  '/api/products',
+  productData
+);
 ```
 
 ### 2. React Query Hooks (`src/lib/api/hooks.ts`)

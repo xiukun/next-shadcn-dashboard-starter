@@ -559,7 +559,6 @@ See "Theming System" section above or `docs/themes.md`.
 6. **Environment variables** - prefix with `NEXT_PUBLIC_` for client-side access
 7. **shadcn components** - don't modify files in `src/components/ui/` directly; extend them instead
 
-
 # AGENTS
 
 <skills_system priority="1">
@@ -571,15 +570,17 @@ See "Theming System" section above or `docs/themes.md`.
 When users ask you to perform tasks, check if any of the available skills below can help complete the task more effectively. Skills provide specialized capabilities and domain knowledge.
 
 How to use skills:
+
 - Invoke: Bash("openskills read <skill-name>")
 - The skill content will load with detailed instructions on how to complete the task
 - Base directory provided in output for resolving bundled resources (references/, scripts/, assets/)
 
 Usage notes:
+
 - Only use skills listed in <available_skills> below
 - Do not invoke a skill that is already loaded in your context
 - Each skill invocation is stateless
-</usage>
+  </usage>
 
 <available_skills>
 
@@ -704,6 +705,7 @@ Usage notes:
 </skill>
 
 </available_skills>
+
 <!-- SKILLS_TABLE_END -->
 
 </skills_system>
