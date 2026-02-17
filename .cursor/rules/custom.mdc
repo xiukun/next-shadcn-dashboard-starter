@@ -1,0 +1,54 @@
+---
+name: custom
+description: This is a new rule
+---
+
+# Overview
+
+## Mini-Cursor Agent Rules (Project)
+
+本文件用于**强制约束** AI 在本仓库内的工作流与质量门禁。若与其它文档冲突，以本文件为准。
+
+### 0) Skills（Superpowers）使用规范（强制）
+
+- **必须先选技能再行动**：当用户请求是“研究/逆向/写计划/大改动/多步骤任务”时，先判断是否需要使用 Superpowers skills；需要则先执行 `openskills read <skill-name>` 再继续。
+- **禁止跳过门禁**：任何绕过下面“/opsx:apply 门禁”的行为都视为违规，即使看起来是“小改动”。
+
+### 1) 自动逆向存档（无文档存量代码时）
+
+当用户给出如下指令（或语义等价指令）：
+- “使用 Superpowers 的研究技能，读取 `src/` 下的代码并执行 `openspec-cn init` 进行逆向规格生成”
+- “自动逆向存档 / 逆向规格生成 / 生成 openspec 规格”
+
+AI 必须按顺序执行：
+- **加载研究技能**：`openskills read skill-using-superpowers`，并按其中的“研究/调研”流程执行。
+- **阅读代码**：系统性阅读 `src/`（必要时包含 `package.json`/`tsconfig.json`）并输出模块概览、关键入口、数据流/控制流、对外 API。
+- **执行逆向规格生成**：
+  - **首次初始化（没有 `openspec/` 目录时）**：在项目根目录终端运行 `openspec-cn init`
+  - **已初始化（已有 `openspec/` 目录时）**：优先运行 `openspec-cn update` 来刷新说明文件；如需重新生成结构再使用 `openspec-cn init`
+- **落盘归档**：将生成的规格、以及 AI 补充的“规格解读/约束/边界条件”整理到 `docs/`（建议 `docs/openspec/`）。
+
+### 2) 强制审核门禁：任何 `/opsx:apply` 前必须核对需求文档（强制）
+
+**触发条件**：当 AI 准备执行任何形式的“应用变更”动作时（包括但不限于 `/opsx:apply`、批量应用补丁、自动重构、生成/覆盖文件等）。
+
+**门禁要求（必须全部满足）**：
+- **先定位需求文档**：
+  - 若本仓库已使用 OpenSpec（存在 `openspec/`），则对**影响运行行为/API/数据结构**的改动，需求来源**必须**来自某个唯一的 `change-id`：
+    - `openspec/changes/<change-id>/proposal.md`（为什么/什么/影响）
+    - `openspec/changes/<change-id>/tasks.md`（实施清单）
+    - `openspec/changes/<change-id>/specs/**/spec.md`（本次变更的增量规范）
+    - 以及被影响的当前规范：`openspec/specs/**/spec.md`
+  - `docs/REQUIREMENTS.md` 仅用于：
+    - 尚未使用 OpenSpec（没有 `openspec/` 目录）时的默认需求入口，或
+    - 不改变系统行为的轻量工作（文档排版、说明性文档、开发工具脚本等）
+  - 若用户指定了其它需求文档（例如 `docs/*.md`、Issue/PR 描述、或外部需求文本），以用户指定为准，并在输出中明确引用来源。
+- **加载写计划技能并进行核对**：
+  - 先执行：`openskills read skill-writing-plans`
+  - 然后输出一份**“需求核对清单（checklist）”**，至少包含：
+    - 需求拆解与验收标准（Acceptance Criteria）
+    - 需要修改/新增的文件列表（预估即可）
+    - 风险点与回滚策略（如适用）
+    - 明确声明：本次变更如何逐条满足需求（逐条对齐）
+- **只有在完成上述核对后**，才允许执行 `/opsx:apply` 或任何等价的应用变更操作；对于行为级改动，核对清单中必须显式标注所对应的 `change-id`。
+
