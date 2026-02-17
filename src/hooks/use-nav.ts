@@ -17,8 +17,8 @@
  */
 
 import { useMemo } from 'react';
-import { useOrganization, useUser } from '@clerk/nextjs';
 import type { NavItem } from '@/types';
+import { useAuthContext } from '@/components/auth/auth-context';
 
 /**
  * Hook to filter navigation items based on RBAC (fully client-side)
@@ -27,22 +27,18 @@ import type { NavItem } from '@/types';
  * @returns Filtered items
  */
 export function useFilteredNavItems(items: NavItem[]) {
-  const { organization, membership } = useOrganization();
-  const { user } = useUser();
+  const { organization, user } = useAuthContext();
 
   // Memoize context and permissions
   const accessContext = useMemo(() => {
-    const permissions = membership?.permissions || [];
-    const role = membership?.role;
-
     return {
       organization: organization ?? undefined,
       user: user ?? undefined,
-      permissions: permissions as string[],
-      role: role ?? undefined,
+      permissions: [] as string[],
+      role: undefined as string | undefined,
       hasOrg: !!organization
     };
-  }, [organization?.id, user?.id, membership?.permissions, membership?.role]);
+  }, [organization?.id, user?.id]);
 
   // Filter items synchronously (all client-side)
   const filteredItems = useMemo(() => {

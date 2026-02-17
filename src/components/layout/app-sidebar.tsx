@@ -37,8 +37,8 @@ import {
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
 import { navItems } from '@/config/nav-config';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { useOrganization, useUser } from '@clerk/nextjs';
 import { useFilteredNavItems } from '@/hooks/use-nav';
+import { useAuthContext } from '@/components/auth/auth-context';
 import { useUserPreferencesStore } from '@/stores/user-preferences-store';
 import {
   IconBell,
@@ -58,8 +58,7 @@ import { OrgSwitcher } from '../org-switcher';
 export default function AppSidebar() {
   const pathname = usePathname();
   const { isOpen } = useMediaQuery();
-  const { user } = useUser();
-  const { organization } = useOrganization();
+  const { user, organization, logout } = useAuthContext();
   const router = useRouter();
   const filteredItems = useFilteredNavItems(navItems);
   const { sidebarCollapseMode } = useUserPreferencesStore();
@@ -245,7 +244,11 @@ export default function AppSidebar() {
                     <UserAvatarProfile
                       className='h-8 w-8 rounded-lg'
                       showInfo
-                      user={user}
+                      user={{
+                        imageUrl: user.avatarUrl,
+                        fullName: user.name,
+                        emailAddresses: [{ emailAddress: user.email }]
+                      }}
                     />
                   )}
                   <IconChevronsDown className='ml-auto size-4' />
@@ -263,7 +266,11 @@ export default function AppSidebar() {
                       <UserAvatarProfile
                         className='h-8 w-8 rounded-lg'
                         showInfo
-                        user={user}
+                        user={{
+                          imageUrl: user.avatarUrl,
+                          fullName: user.name,
+                          emailAddresses: [{ emailAddress: user.email }]
+                        }}
                       />
                     )}
                   </div>
@@ -291,9 +298,14 @@ export default function AppSidebar() {
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={async () => {
+                    await logout();
+                    router.push('/auth/sign-in');
+                  }}
+                >
                   <IconLogout className='mr-2 h-4 w-4' />
-                  <SignOutButton redirectUrl='/auth/sign-in' />
+                  退出登录
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

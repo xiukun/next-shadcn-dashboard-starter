@@ -10,17 +10,23 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
-import { SignOutButton, useUser } from '@clerk/nextjs';
+import { useAuthContext } from '@/components/auth/auth-context';
 import { useRouter } from 'next/navigation';
 export function UserNav() {
-  const { user } = useUser();
+  const { user, logout } = useAuthContext();
   const router = useRouter();
   if (user) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='relative h-8 w-8 rounded-full'>
-            <UserAvatarProfile user={user} />
+            <UserAvatarProfile
+              user={{
+                imageUrl: user.avatarUrl,
+                fullName: user.name,
+                emailAddresses: [{ emailAddress: user.email }]
+              }}
+            />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -31,11 +37,9 @@ export function UserNav() {
         >
           <DropdownMenuLabel className='font-normal'>
             <div className='flex flex-col space-y-1'>
-              <p className='text-sm leading-none font-medium'>
-                {user.fullName}
-              </p>
+              <p className='text-sm leading-none font-medium'>{user.name}</p>
               <p className='text-muted-foreground text-xs leading-none'>
-                {user.emailAddresses[0].emailAddress}
+                {user.email}
               </p>
             </div>
           </DropdownMenuLabel>
@@ -49,8 +53,13 @@ export function UserNav() {
             <DropdownMenuItem>New Team</DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <SignOutButton redirectUrl='/auth/sign-in' />
+          <DropdownMenuItem
+            onClick={async () => {
+              await logout();
+              router.push('/auth/sign-in');
+            }}
+          >
+            退出登录
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
