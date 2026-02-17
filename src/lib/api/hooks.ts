@@ -7,7 +7,8 @@ import {
   type QueryKey
 } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import type { ApiError, ApiResponse } from './types';
+import type { ApiResponse } from './types';
+import { ApiError } from './types';
 import { apiRequest, type KyOptions } from './request';
 
 /**
@@ -26,8 +27,30 @@ export function useApiQuery<TData = unknown, TError = ApiError>(
   return useQuery<TData, TError>({
     queryKey,
     queryFn: async () => {
-      const response = await apiRequest.get(url, options).json<TData>();
-      return response;
+      try {
+        // API 返回的是 ApiResponse<TData> 格式
+        const response = await apiRequest
+          .get(url, options)
+          .json<ApiResponse<TData>>();
+
+        // 如果响应不成功，抛出错误
+        if (!response.success) {
+          throw new ApiError(
+            0,
+            response.error || 'API request failed',
+            response,
+            response.error || response.message || 'API request failed'
+          );
+        }
+
+        // 返回解包后的数据
+        // 注意：如果 TData 本身就是 ApiResponse 格式（如 PaginatedResponse），
+        // 那么 response.data 就是 TData，不需要再次解包
+        return response.data as TData;
+      } catch (error) {
+        console.error('[useApiQuery] Error:', { url, error });
+        throw error;
+      }
     },
     ...options
   });

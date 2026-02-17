@@ -149,7 +149,8 @@ export function useProducts(params?: ProductsQueryParams) {
   const queryString = queryParams.toString();
   const url = `/api/products${queryString ? `?${queryString}` : ''}`;
 
-  return useApiQuery<PaginatedResponse<Product>>(['products', params], url, {
+  // 这里的 T 就是 Product[]
+  return useApiQuery<Product[]>(['products', params], url, {
     staleTime: 1000 * 60 * 2
   });
 }

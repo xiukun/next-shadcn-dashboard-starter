@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useRouteTabsStore, type RouteTab } from '@/lib/route-tabs-store';
 import { navItems } from '@/config/nav-config';
 import type { NavItem } from '@/types';
@@ -33,8 +33,9 @@ function findNavItemByUrl(
  */
 export function useRouteTabs() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const { tabs, activeTabId, addTab, setActiveTab, hasTab } =
+  const { tabs, activeTabId, addTab, setActiveTab, hasTab, updateTabUrl } =
     useRouteTabsStore();
 
   // 监听路由变化，自动创建/激活 Tab
@@ -44,9 +45,14 @@ export function useRouteTabs() {
       return;
     }
 
+    const queryString = searchParams.toString();
+    const fullUrl = queryString ? `${pathname}?${queryString}` : pathname;
+
     // 如果当前路由已有 Tab，只激活它
     if (hasTab(pathname)) {
       setActiveTab(pathname);
+      // 同步最新 url（包含 query 参数），避免切回 tab 丢参
+      updateTabUrl(pathname, fullUrl);
       return;
     }
 
@@ -57,7 +63,7 @@ export function useRouteTabs() {
       const tab: RouteTab = {
         id: pathname,
         title: navItem.title,
-        url: pathname,
+        url: fullUrl,
         icon: navItem.icon,
         // 默认页不可关闭，其他页面可关闭
         closable: pathname !== '/dashboard/overview'
@@ -77,12 +83,12 @@ export function useRouteTabs() {
       const tab: RouteTab = {
         id: pathname,
         title,
-        url: pathname,
+        url: fullUrl,
         closable: pathname !== '/dashboard/overview'
       };
       addTab(tab);
     }
-  }, [pathname, addTab, setActiveTab, hasTab]);
+  }, [pathname, searchParams, addTab, setActiveTab, hasTab, updateTabUrl]);
 
   // 切换到指定路由
   const switchToTab = (tabId: string) => {

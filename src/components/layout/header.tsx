@@ -9,6 +9,7 @@ import SearchInput from '../search-input';
 import { UserNav } from './user-nav';
 import { SettingsPanel } from './settings-panel';
 import { useUserPreferencesStore } from '@/lib/user-preferences-store';
+import { useRouteTabsStore } from '@/lib/route-tabs-store';
 import { Button } from '../ui/button';
 import { Icons } from '../icons';
 
@@ -25,6 +26,8 @@ export default function Header() {
     setMounted(true);
     // 触发 Zustand store 的 hydration
     useUserPreferencesStore.persist.rehydrate();
+    // 确保 F5 刷新后 tabs 也能从 localStorage 恢复（route-tabs-store 设置了 skipHydration: true）
+    useRouteTabsStore.persist.rehydrate();
   }, []);
 
   useEffect(() => {

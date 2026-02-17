@@ -33,6 +33,14 @@ export interface UserPreferences {
    * 'expanded-submenu': 展开子项模式，折叠时显示图标和所有子菜单项
    */
   sidebarCollapseMode: 'icon' | 'expanded-submenu';
+
+  /**
+   * 是否启用页面缓存（Keep-Alive）
+   * 默认值: true
+   * 当为 true 时，切换标签页时保留页面状态和 DOM 结构
+   * 当为 false 时，切换标签页时重新渲染页面
+   */
+  enableKeepAlive: boolean;
 }
 
 interface UserPreferencesStore extends UserPreferences {
@@ -40,13 +48,15 @@ interface UserPreferencesStore extends UserPreferences {
   setShowBreadcrumbs: (value: boolean) => void;
   setBreadcrumbStyle: (value: 'regular' | 'background') => void;
   setSidebarCollapseMode: (value: 'icon' | 'expanded-submenu') => void;
+  setEnableKeepAlive: (value: boolean) => void;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   enableTabs: true,
   showBreadcrumbs: true,
   breadcrumbStyle: 'regular',
-  sidebarCollapseMode: 'icon'
+  sidebarCollapseMode: 'icon',
+  enableKeepAlive: true
 };
 
 export const useUserPreferencesStore = create<UserPreferencesStore>()(
@@ -68,6 +78,10 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
 
       setSidebarCollapseMode: (value: 'icon' | 'expanded-submenu') => {
         set({ sidebarCollapseMode: value });
+      },
+
+      setEnableKeepAlive: (value: boolean) => {
+        set({ enableKeepAlive: value });
       }
     }),
     {

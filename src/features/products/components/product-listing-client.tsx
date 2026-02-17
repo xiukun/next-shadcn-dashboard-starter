@@ -1,9 +1,4 @@
-/**
- * Product Listing Client Component
- *
- * 使用 React Query 和新的 API 客户端的客户端组件示例
- */
-
+// src/features/products/components/product-listing-client.tsx
 'use client';
 
 import { useProducts } from '../api/products';
@@ -37,15 +32,12 @@ export default function ProductListingClient() {
     );
   }
 
-  if (!isSuccess || !data?.success || !data.data) {
+  // 现在 data 应该是 Product[]，直接使用即可
+  if (!isSuccess || !data || !Array.isArray(data) || data.length === 0) {
     return <div className='p-4'>No products found</div>;
   }
 
   return (
-    <ProductTable
-      data={data.data}
-      totalItems={data.total || data.data.length}
-      columns={columns}
-    />
+    <ProductTable data={data} totalItems={data.length} columns={columns} />
   );
 }

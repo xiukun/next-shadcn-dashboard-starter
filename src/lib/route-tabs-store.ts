@@ -13,6 +13,7 @@ interface RouteTabsStore {
   tabs: RouteTab[];
   activeTabId: string | null;
   addTab: (tab: RouteTab) => void;
+  updateTabUrl: (tabId: string, url: string) => void;
   removeTab: (tabId: string) => string | null; // 返回新的激活标签页 ID
   setActiveTab: (tabId: string) => void;
   closeOtherTabs: (tabId: string) => void;
@@ -38,9 +39,14 @@ export const useRouteTabsStore = create<RouteTabsStore>()(
 
       addTab: (tab: RouteTab) => {
         const state = get();
-        // 如果标签页已存在，只激活它
+        // 如果标签页已存在：激活它，并同步最新 url（包含 query 参数）
         if (state.hasTab(tab.id)) {
-          set({ activeTabId: tab.id });
+          set((prev) => ({
+            activeTabId: tab.id,
+            tabs: prev.tabs.map((t) =>
+              t.id === tab.id ? { ...t, url: tab.url } : t
+            )
+          }));
           return;
         }
 
@@ -68,6 +74,12 @@ export const useRouteTabsStore = create<RouteTabsStore>()(
           tabs: newTabs,
           activeTabId: tab.id
         });
+      },
+
+      updateTabUrl: (tabId: string, url: string) => {
+        set((prev) => ({
+          tabs: prev.tabs.map((t) => (t.id === tabId ? { ...t, url } : t))
+        }));
       },
 
       removeTab: (tabId: string) => {

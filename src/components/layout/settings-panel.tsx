@@ -33,10 +33,12 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
     showBreadcrumbs,
     breadcrumbStyle,
     sidebarCollapseMode,
+    enableKeepAlive,
     setEnableTabs,
     setShowBreadcrumbs,
     setBreadcrumbStyle,
-    setSidebarCollapseMode
+    setSidebarCollapseMode,
+    setEnableKeepAlive
   } = useUserPreferencesStore();
 
   // 确保在客户端 hydration 完成后再渲染
@@ -186,6 +188,21 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
                   id='enable-tabs'
                   checked={enableTabs}
                   onCheckedChange={setEnableTabs}
+                />
+              </div>
+
+              <div className='flex items-center justify-between'>
+                <div className='space-y-0.5'>
+                  <Label htmlFor='enable-keepalive'>启用页面缓存</Label>
+                  <p className='text-muted-foreground text-sm'>
+                    启用后，切换标签页时保留页面状态和 DOM 结构
+                  </p>
+                </div>
+                <Switch
+                  id='enable-keepalive'
+                  checked={enableKeepAlive}
+                  onCheckedChange={setEnableKeepAlive}
+                  disabled={!enableTabs}
                 />
               </div>
             </div>
