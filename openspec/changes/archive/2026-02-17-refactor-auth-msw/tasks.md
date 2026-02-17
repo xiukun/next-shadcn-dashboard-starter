@@ -16,8 +16,7 @@
 
 - [ ] 3.1 在 `src/lib/` 下新增 `auth-client` 抽象实现（接口 + mock 实现 + Clerk 实现占位），用 TypeScript 明确类型。
 - [ ] 3.2 在 `src/components/layout/providers.tsx` 中引入新的 AuthProvider（或等价机制），将 “真实 Clerk 模式” 与 “MSW Mock 模式” 切换逻辑收敛到此处。
-- [ ] 3.3 保持生产模式仍使用 `ClerkProvider`，并仅在 Mock 模式下绕过 Clerk，改用自定义 `AuthProvider`。
-- [ ] 3.4 为后续组件（`user-nav`、`org-switcher` 等）提供新的 Hook（如 `useAuthUser`、`useAuthOrg`）作为唯一依赖入口。
+- [ ] 3.3 为后续组件（`user-nav`、`org-switcher` 等）提供新的 Hook（如 `useAuthUser`、`useAuthOrg`）作为唯一依赖入口。
 
 ## 4. 登录视图与路由保护重构
 

@@ -8,19 +8,20 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
-import { useOrganization } from '@clerk/nextjs';
-import { PricingTable } from '@clerk/nextjs';
+import { useAuthContext } from '@/components/auth/auth-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 import { billingInfoContent } from '@/config/infoconfig';
 
 export default function BillingPage() {
-  const { organization, isLoaded } = useOrganization();
+  const { organization, loading } = useAuthContext();
+
+  const hasAccess = !!organization;
 
   return (
     <PageContainer
-      isloading={!isLoaded}
-      access={!!organization}
+      isloading={loading}
+      access={hasAccess}
       accessFallback={
         <div className='flex min-h-[400px] items-center justify-center'>
           <div className='space-y-2 text-center'>
@@ -34,14 +35,19 @@ export default function BillingPage() {
       }
       infoContent={billingInfoContent}
       pageTitle='Billing & Plans'
-      pageDescription={`Manage your subscription and usage limits for ${organization?.name}`}
+      pageDescription={
+        organization
+          ? `Manage your subscription and usage limits for ${organization.name}`
+          : 'Manage your subscription and usage limits for your organization.'
+      }
     >
       <div className='space-y-6'>
         <Alert>
           <Info className='h-4 w-4' />
           <AlertDescription>
-            Plans and subscriptions are managed through Clerk Billing. Subscribe
-            to a plan to unlock features and higher limits.
+            In the current mock auth setup, billing is a static preview. When
+            you hook this project up to a real billing provider, you can replace
+            this copy with real subscription data.
           </AlertDescription>
         </Alert>
 
@@ -49,15 +55,15 @@ export default function BillingPage() {
           <CardHeader>
             <CardTitle>Available Plans</CardTitle>
             <CardDescription>
-              Choose a plan that fits your organization's needs
+              Choose a plan that fits your organization&apos;s needs
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className='mx-auto max-w-4xl'>
-              {/* <PricingTable for='organization' /> */}
               <p className='text-muted-foreground py-8 text-center'>
-                Billing feature is currently disabled. Please enable it in Clerk
-                Dashboard to view pricing plans.
+                Billing feature is currently disabled in this mock environment.
+                Integrate your billing provider here to display real pricing
+                plans.
               </p>
             </div>
           </CardContent>

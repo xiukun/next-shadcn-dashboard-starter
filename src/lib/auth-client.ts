@@ -37,6 +37,32 @@ export interface AuthClient {
   logout(): Promise<void>;
 }
 
+const STORAGE_KEY = 'mock-auth-session';
+
+function loadStoredSession(): AuthSession | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as AuthSession;
+  } catch {
+    return null;
+  }
+}
+
+function storeSession(session: AuthSession | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (!session) {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    }
+  } catch {
+    // ignore storage errors in mock environment
+  }
+}
+
 // 基础实现：通过 HTTP 调用后端（当前由 MSW 拦截），后续可以替换为真实接口
 export function createHttpAuthClient(baseUrl = ''): AuthClient {
   const prefix = baseUrl || '';
@@ -66,10 +92,20 @@ export function createHttpAuthClient(baseUrl = ''): AuthClient {
 
   return {
     async getSession() {
+      // 浏览器环境下优先从本地缓存恢复 session，
+      // 确保刷新页面后仍然保留登录状态。
+      const cached = loadStoredSession();
+      if (cached) {
+        return cached;
+      }
+
       try {
         const data = await request<AuthSession | null>('/auth/me', {
           method: 'GET'
         });
+        if (data) {
+          storeSession(data);
+        }
         return data;
       } catch {
         return null;
@@ -80,10 +116,12 @@ export function createHttpAuthClient(baseUrl = ''): AuthClient {
         method: 'POST',
         body: JSON.stringify(params)
       });
+      storeSession(data);
       return data;
     },
     async logout() {
       await request<unknown>('/auth/logout', { method: 'POST' });
+      storeSession(null);
     }
   };
 }
