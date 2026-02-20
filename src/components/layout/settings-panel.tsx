@@ -15,7 +15,9 @@ import { Label } from '@/components/ui/label';
 import { useUserPreferencesStore } from '@/stores/user-preferences-store';
 import { ThemeSelectorInline } from '@/components/themes/theme-selector-inline';
 import { ThemeModeToggle } from '@/components/themes/theme-mode-toggle';
+import { LanguageSwitcher } from './language-switcher';
 import { Separator } from '@/components/ui/separator';
+import { useTranslations } from 'next-intl';
 
 interface SettingsPanelProps {
   open: boolean;
@@ -40,6 +42,8 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
     setSidebarCollapseMode,
     setEnableKeepAlive
   } = useUserPreferencesStore();
+  const t = useTranslations('settings');
+  const tLanguage = useTranslations('language');
 
   // 确保在客户端 hydration 完成后再渲染
   useEffect(() => {
@@ -56,14 +60,14 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-h-[80vh] max-w-2xl overflow-y-auto'>
         <DialogHeader>
-          <DialogTitle>偏好设置</DialogTitle>
-          <DialogDescription>自定义偏好设置 & 实时预览</DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue='layout' className='w-full'>
           <TabsList className='grid w-full grid-cols-2'>
-            <TabsTrigger value='layout'>布局</TabsTrigger>
-            <TabsTrigger value='appearance'>外观</TabsTrigger>
+            <TabsTrigger value='layout'>{t('layout')}</TabsTrigger>
+            <TabsTrigger value='appearance'>{t('appearance')}</TabsTrigger>
           </TabsList>
 
           {/* 布局标签页 */}
@@ -71,13 +75,13 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
             {/* 侧边栏相关设置 */}
             <div className='space-y-4'>
               <div className='space-y-2'>
-                <h3 className='text-sm font-medium'>侧边栏</h3>
+                <h3 className='text-sm font-medium'>{t('sidebar')}</h3>
               </div>
 
               <div className='space-y-2'>
-                <Label>折叠效果</Label>
+                <Label>{t('collapseEffect')}</Label>
                 <p className='text-muted-foreground text-sm'>
-                  选择侧边栏折叠时的显示方式
+                  {t('collapseEffectDescription')}
                 </p>
                 <RadioGroup
                   value={sidebarCollapseMode}
@@ -91,7 +95,7 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
                       htmlFor='icon-mode'
                       className='cursor-pointer font-normal'
                     >
-                      图标模式
+                      {t('iconMode')}
                     </Label>
                   </div>
                   <div className='flex items-center space-x-2'>
@@ -103,14 +107,14 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
                       htmlFor='expanded-submenu-mode'
                       className='cursor-pointer font-normal'
                     >
-                      展开子项模式
+                      {t('expandedSubmenuMode')}
                     </Label>
                   </div>
                 </RadioGroup>
                 <p className='text-muted-foreground text-xs'>
-                  图标模式：折叠时只显示图标，点击展开子菜单
+                  {t('iconModeDescription')}
                   <br />
-                  展开子项模式：折叠时显示图标和所有子菜单项
+                  {t('expandedSubmenuModeDescription')}
                 </p>
               </div>
             </div>
@@ -120,14 +124,16 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
             {/* 面包屑相关设置 */}
             <div className='space-y-4'>
               <div className='space-y-2'>
-                <h3 className='text-sm font-medium'>面包屑</h3>
+                <h3 className='text-sm font-medium'>{t('breadcrumbs')}</h3>
               </div>
 
               <div className='flex items-center justify-between'>
                 <div className='space-y-0.5'>
-                  <Label htmlFor='show-breadcrumbs'>显示面包屑</Label>
+                  <Label htmlFor='show-breadcrumbs'>
+                    {t('showBreadcrumbs')}
+                  </Label>
                   <p className='text-muted-foreground text-sm'>
-                    当标签栏关闭时显示面包屑导航
+                    {t('showBreadcrumbsDescription')}
                   </p>
                 </div>
                 <Switch
@@ -139,7 +145,7 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
               </div>
 
               <div className='space-y-2'>
-                <Label>面包屑风格</Label>
+                <Label>{t('breadcrumbStyle')}</Label>
                 <RadioGroup
                   value={breadcrumbStyle}
                   onValueChange={(value) =>
@@ -153,7 +159,7 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
                       htmlFor='regular'
                       className='cursor-pointer font-normal'
                     >
-                      常规
+                      {t('regular')}
                     </Label>
                   </div>
                   <div className='flex items-center space-x-2'>
@@ -162,7 +168,7 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
                       htmlFor='background'
                       className='cursor-pointer font-normal'
                     >
-                      背景
+                      {t('background')}
                     </Label>
                   </div>
                 </RadioGroup>
@@ -174,14 +180,14 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
             {/* 标签栏相关设置 */}
             <div className='space-y-4'>
               <div className='space-y-2'>
-                <h3 className='text-sm font-medium'>标签栏</h3>
+                <h3 className='text-sm font-medium'>{t('tabs')}</h3>
               </div>
 
               <div className='flex items-center justify-between'>
                 <div className='space-y-0.5'>
-                  <Label htmlFor='enable-tabs'>启用标签栏</Label>
+                  <Label htmlFor='enable-tabs'>{t('enableTabs')}</Label>
                   <p className='text-muted-foreground text-sm'>
-                    启用多标签页导航，关闭则显示面包屑
+                    {t('enableTabsDescription')}
                   </p>
                 </div>
                 <Switch
@@ -193,9 +199,11 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
 
               <div className='flex items-center justify-between'>
                 <div className='space-y-0.5'>
-                  <Label htmlFor='enable-keepalive'>启用页面缓存</Label>
+                  <Label htmlFor='enable-keepalive'>
+                    {t('enableKeepAlive')}
+                  </Label>
                   <p className='text-muted-foreground text-sm'>
-                    启用后，切换标签页时保留页面状态和 DOM 结构
+                    {t('enableKeepAliveDescription')}
                   </p>
                 </div>
                 <Switch
@@ -212,13 +220,15 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
           <TabsContent value='appearance' className='mt-6 space-y-6'>
             <div className='space-y-4'>
               <div className='space-y-2'>
-                <h3 className='text-sm font-medium'>主题</h3>
+                <h3 className='text-sm font-medium'>{t('theme')}</h3>
               </div>
 
               <div className='space-y-4'>
                 <div className='space-y-2'>
-                  <Label>主题模式</Label>
-                  <p className='text-muted-foreground text-sm'>切换明暗主题</p>
+                  <Label>{t('themeMode')}</Label>
+                  <p className='text-muted-foreground text-sm'>
+                    {t('themeModeDescription')}
+                  </p>
                   <div className='flex items-center'>
                     <ThemeModeToggle />
                   </div>
@@ -227,11 +237,24 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
                 <Separator />
 
                 <div className='space-y-2'>
-                  <Label>主题颜色</Label>
+                  <Label>{t('themeColor')}</Label>
                   <p className='text-muted-foreground text-sm'>
-                    选择应用主题配色方案
+                    {t('themeColorDescription')}
                   </p>
                   <ThemeSelectorInline align='start' />
+                </div>
+
+                <Separator />
+
+                {/* 语言设置 */}
+                <div className='space-y-2'>
+                  <Label>{tLanguage('language')}</Label>
+                  <p className='text-muted-foreground text-sm'>
+                    {tLanguage('selectLanguage')}
+                  </p>
+                  <div className='flex items-center'>
+                    <LanguageSwitcher />
+                  </div>
                 </div>
               </div>
             </div>

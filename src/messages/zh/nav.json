@@ -1,0 +1,15 @@
+{
+  "dashboard": "仪表盘",
+  "workspaces": "工作区",
+  "teams": "团队",
+  "product": "产品",
+  "productClient": "产品（客户端）",
+  "kanban": "看板",
+  "pro": "专业版",
+  "exclusive": "专属功能",
+  "account": "账户",
+  "profile": "个人资料",
+  "billing": "账单",
+  "login": "登录",
+  "logout": "退出登录"
+}

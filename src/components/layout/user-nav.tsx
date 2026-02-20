@@ -12,9 +12,14 @@ import {
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
 import { useAuthContext } from '@/components/auth/auth-context';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 export function UserNav() {
   const { user, logout } = useAuthContext();
   const router = useRouter();
+  const t = useTranslations('nav');
+  const tCommon = useTranslations('common');
+  const locale = useLocale();
   if (user) {
     return (
       <DropdownMenu>
@@ -45,21 +50,27 @@ export function UserNav() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>
-              Profile
+            <DropdownMenuItem
+              onClick={() => router.push(`/${locale}/dashboard/profile`)}
+            >
+              {t('profile')}
             </DropdownMenuItem>
-            <DropdownMenuItem>Billing</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem>New Team</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => router.push(`/${locale}/dashboard/billing`)}
+            >
+              {t('billing')}
+            </DropdownMenuItem>
+            <DropdownMenuItem>{tCommon('settings')}</DropdownMenuItem>
+            <DropdownMenuItem>{tCommon('newTeam')}</DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={async () => {
               await logout();
-              router.push('/auth/sign-in');
+              router.push(`/${locale}/auth/sign-in`);
             }}
           >
-            退出登录
+            {t('logout')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

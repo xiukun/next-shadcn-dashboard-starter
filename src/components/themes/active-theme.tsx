@@ -36,7 +36,7 @@ export function ActiveThemeProvider({
   const [activeTheme, setActiveTheme] = useState<string>(themeToUse);
 
   useEffect(() => {
-    // Only update if theme has changed
+    // Set theme on initial mount and when it changes
     const currentTheme = document.documentElement.getAttribute('data-theme');
     if (currentTheme !== activeTheme) {
       setThemeCookie(activeTheme);

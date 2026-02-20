@@ -1,12 +1,13 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import { defaultLocale } from '@/i18n/config';
 
 export default async function Page() {
   const { userId } = await auth();
 
   if (!userId) {
-    return redirect('/auth/sign-in');
+    return redirect(`/${defaultLocale}/auth/sign-in`);
   } else {
-    redirect('/dashboard/overview');
+    redirect(`/${defaultLocale}/dashboard/overview`);
   }
 }

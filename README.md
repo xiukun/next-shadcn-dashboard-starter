@@ -177,9 +177,6 @@ You should now be able to access the application at http://localhost:3000.
 
 ---
 
-#### Cleanup
-
-To remove demo data, boilerplate, or unwanted starter code, see the [cleanup guide](__CLEANUP__/cleanup.md). Follow the instructions there to tidy up, adapt, or personalize your app as needed for your project.
 
 ### ⭐ Support
 

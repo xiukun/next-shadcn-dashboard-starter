@@ -159,9 +159,6 @@ The project follows a feature-based folder structure designed for scalability in
 │   ├── nav-rbac.md        # Navigation RBAC documentation
 │   └── themes.md          # Theme customization guide
 
-/__CLEANUP__               # Feature removal scripts
-    ├── scripts/           # Cleanup automation
-    └── clerk/             # Templates after Clerk removal
 ```
 
 ---
@@ -466,24 +463,6 @@ Ensure these are set in your deployment platform:
 - Sentry source maps uploaded automatically in CI
 
 ---
-
-## Feature Cleanup System
-
-The `__CLEANUP__` folder contains scripts to remove optional features:
-
-```bash
-# List available features
-node __CLEANUP__/scripts/cleanup.js --list
-
-# Remove specific features
-node __CLEANUP__/scripts/cleanup.js clerk    # Remove auth/org/billing
-node __CLEANUP__/scripts/cleanup.js kanban   # Remove kanban board
-node __CLEANUP__/scripts/cleanup.js sentry   # Remove error tracking
-```
-
-**Safety**: Script requires git repository with at least one commit. Use `--force` to skip.
-
-After cleanup, delete the `__CLEANUP__` folder.
 
 ---
 

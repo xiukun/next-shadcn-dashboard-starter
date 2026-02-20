@@ -1,5 +1,4 @@
 'use client';
-import { navItems } from '@/config/nav-config';
 import {
   KBarAnimator,
   KBarPortal,
@@ -12,10 +11,12 @@ import { useMemo } from 'react';
 import RenderResults from './render-result';
 import useThemeSwitching from './use-theme-switching';
 import { useFilteredNavItems } from '@/hooks/use-nav';
+import { useTranslatedNavItems } from '@/hooks/use-translated-nav-items';
 
 export default function KBar({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const filteredItems = useFilteredNavItems(navItems);
+  const translatedNavItems = useTranslatedNavItems();
+  const filteredItems = useFilteredNavItems(translatedNavItems);
 
   // These action are for the navigation
   const actions = useMemo(() => {

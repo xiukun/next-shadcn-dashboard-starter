@@ -1,0 +1,15 @@
+{
+  "dashboard": "Dashboard",
+  "workspaces": "Workspaces",
+  "teams": "Teams",
+  "product": "Product",
+  "productClient": "Product (Client)",
+  "kanban": "Kanban",
+  "pro": "Pro",
+  "exclusive": "Exclusive",
+  "account": "Account",
+  "profile": "Profile",
+  "billing": "Billing",
+  "login": "Login",
+  "logout": "Log out"
+}

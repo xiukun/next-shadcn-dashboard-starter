@@ -35,9 +35,9 @@ import {
   HoverCardTrigger
 } from '@/components/ui/hover-card';
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
-import { navItems } from '@/config/nav-config';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useFilteredNavItems } from '@/hooks/use-nav';
+import { useTranslatedNavItems } from '@/hooks/use-translated-nav-items';
 import { useAuthContext } from '@/components/auth/auth-context';
 import { useUserPreferencesStore } from '@/stores/user-preferences-store';
 import {
@@ -60,7 +60,8 @@ export default function AppSidebar() {
   const { isOpen } = useMediaQuery();
   const { user, organization, logout } = useAuthContext();
   const router = useRouter();
-  const filteredItems = useFilteredNavItems(navItems);
+  const translatedNavItems = useTranslatedNavItems();
+  const filteredItems = useFilteredNavItems(translatedNavItems);
   const { sidebarCollapseMode } = useUserPreferencesStore();
   const { state: sidebarState } = useSidebar();
 

@@ -8,10 +8,12 @@ import { Breadcrumbs } from '../breadcrumbs';
 import SearchInput from '../search-input';
 import { UserNav } from './user-nav';
 import { SettingsPanel } from './settings-panel';
+import { LanguageSwitcherButton } from './language-switcher-button';
 import { useUserPreferencesStore } from '@/stores/user-preferences-store';
 import { useRouteTabsStore } from '@/stores/route-tabs-store';
 import { Button } from '../ui/button';
 import { Icons } from '../icons';
+import { useTranslations } from 'next-intl';
 
 export default function Header() {
   const headerRef = useRef<HTMLElement>(null);
@@ -20,6 +22,7 @@ export default function Header() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { enableTabs } = useUserPreferencesStore();
+  const t = useTranslations('common');
 
   // 确保在客户端 hydration 完成后再渲染
   useEffect(() => {
@@ -89,6 +92,7 @@ export default function Header() {
         <div className='hidden md:flex'>
           <SearchInput />
         </div>
+        <LanguageSwitcherButton />
         <UserNav />
         <Button
           variant='ghost'
@@ -97,7 +101,7 @@ export default function Header() {
           onClick={() => setSettingsOpen(true)}
         >
           <Icons.settings className='h-4 w-4' />
-          <span className='sr-only'>设置</span>
+          <span className='sr-only'>{t('settings')}</span>
         </Button>
       </div>
 

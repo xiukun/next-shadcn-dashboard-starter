@@ -1,0 +1,15 @@
+{
+  "settings": "Settings",
+  "newTeam": "New Team",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  "create": "Create",
+  "update": "Update",
+  "search": "Search",
+  "filter": "Filter",
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success"
+}

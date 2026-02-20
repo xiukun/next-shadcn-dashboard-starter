@@ -3,19 +3,23 @@
 import { useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useRouteTabsStore, type RouteTab } from '@/stores/route-tabs-store';
-import { navItems } from '@/config/nav-config';
+import { useTranslatedNavItems } from './use-translated-nav-items';
 import type { NavItem } from '@/types';
 
 /**
  * 从导航配置中查找路由对应的菜单项
+ * 支持带 locale 的 URL（如 /zh/dashboard/overview）
  */
-function findNavItemByUrl(
-  url: string,
-  items: NavItem[] = navItems
-): NavItem | null {
+function findNavItemByUrl(url: string, items: NavItem[]): NavItem | null {
+  // 移除 locale 前缀进行比较（如 /zh/dashboard -> /dashboard）
+  const normalizedUrl = url.replace(/^\/[^/]+/, '') || '/';
+
   for (const item of items) {
+    // 移除 item.url 中的 locale 前缀进行比较
+    const normalizedItemUrl = item.url.replace(/^\/[^/]+/, '') || '/';
+
     // 精确匹配
-    if (item.url === url) {
+    if (normalizedItemUrl === normalizedUrl) {
       return item;
     }
     // 递归查找子菜单
@@ -37,11 +41,13 @@ export function useRouteTabs() {
   const router = useRouter();
   const { tabs, activeTabId, addTab, setActiveTab, hasTab, updateTabUrl } =
     useRouteTabsStore();
+  const translatedNavItems = useTranslatedNavItems();
 
   // 监听路由变化，自动创建/激活 Tab
   useEffect(() => {
-    // 跳过非 dashboard 路由
-    if (!pathname.startsWith('/dashboard')) {
+    // 跳过非 dashboard 路由（支持带 locale 的路径）
+    const normalizedPath = pathname.replace(/^\/[^/]+/, '') || '/';
+    if (!normalizedPath.startsWith('/dashboard')) {
       return;
     }
 
@@ -57,7 +63,7 @@ export function useRouteTabs() {
     }
 
     // 从导航配置中查找对应的菜单项
-    const navItem = findNavItemByUrl(pathname);
+    const navItem = findNavItemByUrl(pathname, translatedNavItems);
 
     if (navItem) {
       const tab: RouteTab = {

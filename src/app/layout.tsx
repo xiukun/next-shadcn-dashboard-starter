@@ -8,7 +8,7 @@ import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import NextTopLoader from 'nextjs-toploader';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
-import '../styles/globals.css';
+import '@/styles/globals.css';
 
 const META_THEME_COLORS = {
   light: '#ffffff',
@@ -29,17 +29,23 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // 获取主题配置
   const cookieStore = await cookies();
   const activeThemeValue = cookieStore.get('active_theme')?.value;
   const themeToApply = activeThemeValue || DEFAULT_THEME;
 
   return (
-    <html suppressHydrationWarning data-theme={themeToApply}>
+    <html suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               try {
+                // Set initial theme to prevent flash
+                const theme = '${themeToApply}';
+                if (theme) {
+                  document.documentElement.setAttribute('data-theme', theme);
+                }
                 // Set meta theme color
                 if (localStorage.theme === 'dark' || ((!('theme' in localStorage) || localStorage.theme === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '${META_THEME_COLORS.dark}')
