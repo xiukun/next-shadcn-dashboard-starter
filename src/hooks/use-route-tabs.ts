@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useRouteTabsStore, type RouteTab } from '@/stores/route-tabs-store';
 import { useTranslatedNavItems } from './use-translated-nav-items';
 import type { NavItem } from '@/types';
+import { routing } from '@/i18n/routing';
 
 /**
  * 从导航配置中查找路由对应的菜单项
@@ -32,6 +33,28 @@ function findNavItemByUrl(url: string, items: NavItem[]): NavItem | null {
 }
 
 /**
+ * 规范化用于 Tabs 与缓存的路由路径
+ * - 当路径形如 /{locale}/dashboard/... 且 locale 在 routing.locales 中时
+ *   使用去除 locale 前缀后的 canonical path（例如 /en/dashboard/overview -> /dashboard/overview）
+ * - 其他情况下返回原始 pathname
+ */
+function normalizePathForTabs(pathname: string): string {
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments.length === 0) return pathname;
+
+  const maybeLocale = segments[0];
+  if (routing.locales.includes(maybeLocale as any)) {
+    const rest = segments.slice(1);
+    if (rest.length === 0) {
+      return '/';
+    }
+    return `/${rest.join('/')}`;
+  }
+
+  return pathname;
+}
+
+/**
  * 路由 Tabs Hook
  * 监听路由变化，自动创建/激活对应的 Tab
  */
@@ -39,42 +62,37 @@ export function useRouteTabs() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { tabs, activeTabId, addTab, setActiveTab, hasTab, updateTabUrl } =
-    useRouteTabsStore();
+  const { tabs, activeTabId, addTab, setActiveTab } = useRouteTabsStore();
   const translatedNavItems = useTranslatedNavItems();
+  const canonicalPath = normalizePathForTabs(pathname);
 
   // 监听路由变化，自动创建/激活 Tab
   useEffect(() => {
-    // 跳过非 dashboard 路由（支持带 locale 的路径）
-    const normalizedPath = pathname.replace(/^\/[^/]+/, '') || '/';
-    if (!normalizedPath.startsWith('/dashboard')) {
+    // 跳过非 dashboard 路由（使用 canonical path 判断，支持多语言前缀）
+    if (!canonicalPath.startsWith('/dashboard')) {
       return;
     }
 
     const queryString = searchParams.toString();
     const fullUrl = queryString ? `${pathname}?${queryString}` : pathname;
 
-    // 如果当前路由已有 Tab，只激活它
-    if (hasTab(pathname)) {
-      setActiveTab(pathname);
-      // 同步最新 url（包含 query 参数），避免切回 tab 丢参
-      updateTabUrl(pathname, fullUrl);
-      return;
-    }
+    const existingTab = tabs.find((t) => t.id === canonicalPath);
 
     // 从导航配置中查找对应的菜单项
     const navItem = findNavItemByUrl(pathname, translatedNavItems);
 
+    let nextTab: RouteTab;
+
     if (navItem) {
-      const tab: RouteTab = {
-        id: pathname,
+      nextTab = {
+        // 使用 canonical path 作为 Tab ID，确保多语言下同一路由共用一个 Tab
+        id: canonicalPath,
         title: navItem.title,
         url: fullUrl,
         icon: navItem.icon,
         // 默认页不可关闭，其他页面可关闭
-        closable: pathname !== '/dashboard/overview'
+        closable: canonicalPath !== '/dashboard/overview'
       };
-      addTab(tab);
     } else {
       // 如果导航配置中没有找到，根据路径生成标题
       const segments = pathname.split('/').filter(Boolean);
@@ -86,19 +104,44 @@ export function useRouteTabs() {
               .join(' ')
           : 'Dashboard';
 
-      const tab: RouteTab = {
-        id: pathname,
+      nextTab = {
+        id: canonicalPath,
         title,
         url: fullUrl,
-        closable: pathname !== '/dashboard/overview'
+        closable: canonicalPath !== '/dashboard/overview'
       };
-      addTab(tab);
     }
-  }, [pathname, searchParams, addTab, setActiveTab, hasTab, updateTabUrl]);
+
+    if (existingTab) {
+      // 确保当前路由对应的 Tab 处于激活状态
+      if (activeTabId !== canonicalPath) {
+        setActiveTab(canonicalPath);
+      }
+
+      // 如果已存在 Tab，且标题 / 图标 / URL 都一致，则不触发更新，避免无限循环
+      if (
+        existingTab.title === nextTab.title &&
+        existingTab.icon === nextTab.icon &&
+        existingTab.url === nextTab.url
+      ) {
+        return;
+      }
+    }
+
+    addTab(nextTab);
+  }, [
+    pathname,
+    canonicalPath,
+    searchParams,
+    tabs,
+    activeTabId,
+    addTab,
+    setActiveTab,
+    translatedNavItems
+  ]);
 
   // 切换到指定路由
   const switchToTab = (tabId: string) => {
-    setActiveTab(tabId);
     const tab = tabs.find((t) => t.id === tabId);
     if (tab) {
       router.push(tab.url);

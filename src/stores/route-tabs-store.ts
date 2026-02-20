@@ -19,11 +19,12 @@ interface RouteTabsStore {
   closeOtherTabs: (tabId: string) => void;
   closeAllTabs: () => void;
   hasTab: (tabId: string) => boolean;
+  resetTabs: () => void;
 }
 
 const DEFAULT_TAB: RouteTab = {
   id: '/dashboard/overview',
-  title: 'Dashboard',
+  title: '仪表盘',
   url: '/dashboard/overview',
   icon: 'dashboard',
   closable: false // 默认页不可关闭
@@ -44,7 +45,16 @@ export const useRouteTabsStore = create<RouteTabsStore>()(
           set((prev) => ({
             activeTabId: tab.id,
             tabs: prev.tabs.map((t) =>
-              t.id === tab.id ? { ...t, url: tab.url } : t
+              t.id === tab.id
+                ? {
+                    ...t,
+                    // 同步最新 url（包含 query 参数）
+                    url: tab.url,
+                    // 同步标题和图标，确保在切换语言后能够更新为翻译文案
+                    title: tab.title ?? t.title,
+                    icon: tab.icon ?? t.icon
+                  }
+                : t
             )
           }));
           return;
@@ -143,6 +153,13 @@ export const useRouteTabsStore = create<RouteTabsStore>()(
 
       hasTab: (tabId: string) => {
         return get().tabs.some((t) => t.id === tabId);
+      },
+
+      resetTabs: () => {
+        set({
+          tabs: [DEFAULT_TAB],
+          activeTabId: DEFAULT_TAB.id
+        });
       }
     }),
     {

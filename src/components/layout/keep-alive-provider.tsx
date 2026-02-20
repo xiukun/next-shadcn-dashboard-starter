@@ -11,6 +11,29 @@ import { usePathname } from 'next/navigation';
 import { useUserPreferencesStore } from '@/stores/user-preferences-store';
 import { useRouteTabsStore } from '@/stores/route-tabs-store';
 import KeepAliveRoute from './keep-alive-route';
+import { routing } from '@/i18n/routing';
+
+/**
+ * 规范化用于 Tabs 与缓存的路由路径
+ * - 当路径形如 /{locale}/dashboard/... 且 locale 在 routing.locales 中时
+ *   使用去除 locale 前缀后的 canonical path（例如 /en/dashboard/overview -> /dashboard/overview）
+ * - 其他情况下返回原始 pathname
+ */
+function normalizePathForTabs(pathname: string): string {
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments.length === 0) return pathname;
+
+  const maybeLocale = segments[0];
+  if (routing.locales.includes(maybeLocale as any)) {
+    const rest = segments.slice(1);
+    if (rest.length === 0) {
+      return '/';
+    }
+    return `/${rest.join('/')}`;
+  }
+
+  return pathname;
+}
 
 /**
  * Keep-Alive Provider（简化版）
@@ -21,6 +44,7 @@ import KeepAliveRoute from './keep-alive-route';
  */
 const KeepAliveProvider = ({ children }: PropsWithChildren) => {
   const pathname = usePathname();
+  const canonicalPath = normalizePathForTabs(pathname);
   const { enableKeepAlive } = useUserPreferencesStore();
   const { tabs } = useRouteTabsStore();
 
@@ -49,18 +73,24 @@ const KeepAliveProvider = ({ children }: PropsWithChildren) => {
   }
 
   // 创建当前路由缓存（只缓存 dashboard 路由，避免污染）
-  if (pathname.startsWith('/dashboard') && !cache.current.has(pathname)) {
-    cache.current.set(pathname, <Fragment key={pathname}>{children}</Fragment>);
+  if (
+    canonicalPath.startsWith('/dashboard') &&
+    !cache.current.has(canonicalPath)
+  ) {
+    cache.current.set(
+      canonicalPath,
+      <Fragment key={canonicalPath}>{children}</Fragment>
+    );
   }
 
   // tabs 有值时用于清理缓存（关闭 tab 后释放）
   if (tabs.length > 0) {
-    // 注意：tabs.url 现在可能包含 query 参数，keep-alive 缓存 key 使用 pathname（不含 query）
-    // 所以这里必须用 tabs.id（纯 pathname）来判断是否仍打开
+    // 注意：tabs.url 现在可能包含 query 参数，keep-alive 缓存 key 使用 canonical path
+    // 所以这里必须用 tabs.id（canonical path）来判断是否仍打开
     const tabSet = new Set(tabs.map((t) => t.id));
     const keysToDelete: string[] = [];
     cache.current.forEach((_, key) => {
-      if (!tabSet.has(key) && key !== pathname) keysToDelete.push(key);
+      if (!tabSet.has(key) && key !== canonicalPath) keysToDelete.push(key);
     });
     keysToDelete.forEach((k) => cache.current.delete(k));
   }
@@ -72,13 +102,13 @@ const KeepAliveProvider = ({ children }: PropsWithChildren) => {
       style={{ width: '100%', height: '100%', position: 'relative' }}
     >
       {/* 安全兜底：如果未缓存（极少数边界），直接渲染 */}
-      {!cache.current.has(pathname) && children}
+      {!cache.current.has(canonicalPath) && children}
 
       {Array.from(cache.current.entries()).map(([key, node]) => (
         <KeepAliveRoute
           key={key}
           parentDomRef={aliveParentRef}
-          activeKey={pathname}
+          activeKey={canonicalPath}
           pageKey={key}
         >
           {node}

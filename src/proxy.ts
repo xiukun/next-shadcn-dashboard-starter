@@ -8,10 +8,15 @@ const intlMiddleware = createIntlMiddleware(routing);
 const isProtectedRoute = createRouteMatcher(['/dashboard(.*)']);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
-  // 先处理 next-intl 语言检测和重定向
-  const intlResponse = intlMiddleware(req);
-  if (intlResponse) {
-    return intlResponse;
+  const { pathname } = req.nextUrl;
+
+  // 对 API / TRPC 路由跳过 next-intl，中间件仅用于页面路由
+  if (!pathname.startsWith('/api') && !pathname.startsWith('/trpc')) {
+    // 先处理 next-intl 语言检测和重定向
+    const intlResponse = intlMiddleware(req);
+    if (intlResponse) {
+      return intlResponse;
+    }
   }
 
   // 然后处理 Clerk 认证
