@@ -40,7 +40,8 @@ import {
   IconLanguage,
   IconMaximize,
   IconMinimize,
-  IconRefresh
+  IconRefresh,
+  IconBell
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -87,5 +88,6 @@ export const Icons = {
   language: IconLanguage,
   fullscreen: IconMaximize,
   fullscreenExit: IconMinimize,
-  refresh: IconRefresh
+  refresh: IconRefresh,
+  bell: IconBell
 };

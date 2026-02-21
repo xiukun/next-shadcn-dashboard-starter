@@ -1,0 +1,26 @@
+{
+  "items": {
+    "1": {
+      "title": "Received 14 new weekly reports",
+      "description": "Description information description information description information"
+    },
+    "2": {
+      "title": "Zhu Pianyou replied to you",
+      "description": "Description information description information description information"
+    },
+    "3": {
+      "title": "Qu Lili commented on you",
+      "description": "Description information description information description information"
+    },
+    "4": {
+      "title": "To-do reminder",
+      "description": "Description information description information description information"
+    }
+  },
+  "timestamp": {
+    "3hoursAgo": "3 hours ago",
+    "justNow": "Just now",
+    "1dayAgo": "1 day ago",
+    "dateFormat": "yyyy-MM-dd"
+  }
+}

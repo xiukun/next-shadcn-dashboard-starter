@@ -11,5 +11,12 @@
   "filter": "Filter",
   "loading": "Loading...",
   "error": "Error",
-  "success": "Success"
+  "success": "Success",
+  "notifications": "Notifications",
+  "notificationsDescription": "View and manage system notifications",
+  "noNotifications": "No notifications",
+  "clear": "Clear",
+  "viewAllMessages": "View all messages",
+  "markAsRead": "Mark as read",
+  "deleteNotification": "Delete notification"
 }

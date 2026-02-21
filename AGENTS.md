@@ -397,6 +397,195 @@ Tables use TanStack Table with server-side filtering:
 
 ---
 
+## Internationalization (i18n) Guidelines
+
+### Overview
+
+This project uses **next-intl** for internationalization. All user-facing text **MUST** be internationalized from the start. Never hardcode Chinese or English text in components.
+
+### Supported Locales
+
+- `zh` - 简体中文 (default)
+- `en` - English
+
+### Message File Structure
+
+Messages are organized by namespace in `src/messages/{locale}/`:
+
+```
+src/messages/
+├── zh/
+│   ├── common.json       # Common UI labels (buttons, actions, etc.)
+│   ├── nav.json          # Navigation items
+│   ├── settings.json     # Settings panel translations
+│   ├── notifications.json # Feature-specific translations
+│   └── ...
+└── en/
+    ├── common.json
+    ├── nav.json
+    ├── settings.json
+    ├── notifications.json
+    └── ...
+```
+
+### Adding i18n for a New Module
+
+When creating a new feature module, follow these steps:
+
+#### 1. Create Translation Files
+
+Create translation files for each supported locale:
+
+```bash
+# Create files for both locales
+src/messages/zh/{feature-name}.json
+src/messages/en/{feature-name}.json
+```
+
+**Example structure** (`notifications.json`):
+```json
+{
+  "items": {
+    "1": {
+      "title": "收到了14份新周报",
+      "description": "描述信息描述信息描述信息"
+    }
+  },
+  "timestamp": {
+    "3hoursAgo": "3小时前",
+    "justNow": "刚刚"
+  }
+}
+```
+
+#### 2. Register in Messages Loader
+
+Update `src/i18n/messages.ts` to load your new namespace:
+
+```typescript
+const [nav, common, metadata, language, settings, notifications, yourFeature] =
+  await Promise.all([
+    import(`@/messages/${locale}/nav.json`).then((m) => m.default),
+    import(`@/messages/${locale}/common.json`).then((m) => m.default),
+    // ... other imports
+    import(`@/messages/${locale}/your-feature.json`).then((m) => m.default)
+  ]);
+
+return {
+  nav,
+  common,
+  // ... other namespaces
+  yourFeature
+};
+```
+
+**Important**: Also update the fallback return object with your new namespace.
+
+#### 3. Use Translations in Components
+
+**For common UI elements** (buttons, labels, etc.):
+```tsx
+import { useTranslations } from 'next-intl';
+
+function MyComponent() {
+  const t = useTranslations('common');
+  
+  return <Button>{t('save')}</Button>;
+}
+```
+
+**For feature-specific content**:
+```tsx
+import { useTranslations } from 'next-intl';
+
+function NotificationPanel() {
+  const t = useTranslations('common');
+  const tNotifications = useTranslations('notifications');
+  
+  return (
+    <>
+      <SheetTitle>{t('notifications')}</SheetTitle>
+      <p>{tNotifications('items.1.title')}</p>
+    </>
+  );
+}
+```
+
+#### 4. Translation Key Naming Conventions
+
+- **Common UI elements**: Use `common.json`
+  - Actions: `save`, `cancel`, `delete`, `edit`, `create`, `update`
+  - States: `loading`, `error`, `success`
+  - Feature names: `notifications`, `settings`, etc.
+
+- **Feature-specific content**: Use dedicated namespace files
+  - Use nested structure for related content: `items.1.title`
+  - Group related translations: `timestamp.3hoursAgo`
+
+#### 5. Handling Dynamic Content
+
+For dynamic content that needs translation:
+
+```tsx
+// ✅ Good: Use translation keys
+const titleKey = `items.${notification.id}.title`;
+const displayTitle = 
+  tNotifications(titleKey) !== titleKey
+    ? tNotifications(titleKey)
+    : notification.title; // Fallback to original
+
+// ❌ Bad: Hardcoded text
+const displayTitle = notification.title; // Only works for one language
+```
+
+#### 6. Accessibility with Translations
+
+Always provide translations for accessibility attributes:
+
+```tsx
+// ✅ Good
+<button aria-label={t('markAsRead')}>
+  <Icons.check />
+</button>
+
+// ❌ Bad
+<button aria-label="标记为已读">
+  <Icons.check />
+</button>
+```
+
+#### 7. Required Translation Keys Checklist
+
+When creating a new module, ensure you have translations for:
+
+- [ ] All button labels
+- [ ] All form labels and placeholders
+- [ ] All error messages
+- [ ] All success messages
+- [ ] All aria-labels and aria-describedby
+- [ ] All tooltips and help text
+- [ ] All empty states
+- [ ] All feature-specific content (if applicable)
+
+### Best Practices
+
+1. **Never hardcode text** - Always use translation keys
+2. **Use appropriate namespace** - Common UI → `common`, Feature content → feature namespace
+3. **Provide fallbacks** - When translation key doesn't exist, fallback to original or English
+4. **Keep keys consistent** - Use the same key names across locales
+5. **Test both locales** - Verify translations work in both `zh` and `en`
+6. **Update both locales** - Always add translations to both `zh` and `en` files
+
+### Example: Complete i18n Implementation
+
+See `src/components/layout/notification-panel.tsx` for a complete example of:
+- Using multiple translation namespaces
+- Handling dynamic translation keys
+- Providing fallbacks
+- Accessibility with translations
+
+---
+
 ## Error Handling & Monitoring
 
 ### Sentry Integration
@@ -528,6 +717,195 @@ See "Theming System" section above or `docs/themes.md`.
 
 ---
 
+## Internationalization (i18n) Guidelines
+
+### Overview
+
+This project uses **next-intl** for internationalization. All user-facing text **MUST** be internationalized from the start. Never hardcode Chinese or English text in components.
+
+### Supported Locales
+
+- `zh` - 简体中文 (default)
+- `en` - English
+
+### Message File Structure
+
+Messages are organized by namespace in `src/messages/{locale}/`:
+
+```
+src/messages/
+├── zh/
+│   ├── common.json       # Common UI labels (buttons, actions, etc.)
+│   ├── nav.json          # Navigation items
+│   ├── settings.json     # Settings panel translations
+│   ├── notifications.json # Feature-specific translations
+│   └── ...
+└── en/
+    ├── common.json
+    ├── nav.json
+    ├── settings.json
+    ├── notifications.json
+    └── ...
+```
+
+### Adding i18n for a New Module
+
+When creating a new feature module, follow these steps:
+
+#### 1. Create Translation Files
+
+Create translation files for each supported locale:
+
+```bash
+# Create files for both locales
+src/messages/zh/{feature-name}.json
+src/messages/en/{feature-name}.json
+```
+
+**Example structure** (`notifications.json`):
+```json
+{
+  "items": {
+    "1": {
+      "title": "收到了14份新周报",
+      "description": "描述信息描述信息描述信息"
+    }
+  },
+  "timestamp": {
+    "3hoursAgo": "3小时前",
+    "justNow": "刚刚"
+  }
+}
+```
+
+#### 2. Register in Messages Loader
+
+Update `src/i18n/messages.ts` to load your new namespace:
+
+```typescript
+const [nav, common, metadata, language, settings, notifications, yourFeature] =
+  await Promise.all([
+    import(`@/messages/${locale}/nav.json`).then((m) => m.default),
+    import(`@/messages/${locale}/common.json`).then((m) => m.default),
+    // ... other imports
+    import(`@/messages/${locale}/your-feature.json`).then((m) => m.default)
+  ]);
+
+return {
+  nav,
+  common,
+  // ... other namespaces
+  yourFeature
+};
+```
+
+**Important**: Also update the fallback return object with your new namespace.
+
+#### 3. Use Translations in Components
+
+**For common UI elements** (buttons, labels, etc.):
+```tsx
+import { useTranslations } from 'next-intl';
+
+function MyComponent() {
+  const t = useTranslations('common');
+  
+  return <Button>{t('save')}</Button>;
+}
+```
+
+**For feature-specific content**:
+```tsx
+import { useTranslations } from 'next-intl';
+
+function NotificationPanel() {
+  const t = useTranslations('common');
+  const tNotifications = useTranslations('notifications');
+  
+  return (
+    <>
+      <SheetTitle>{t('notifications')}</SheetTitle>
+      <p>{tNotifications('items.1.title')}</p>
+    </>
+  );
+}
+```
+
+#### 4. Translation Key Naming Conventions
+
+- **Common UI elements**: Use `common.json`
+  - Actions: `save`, `cancel`, `delete`, `edit`, `create`, `update`
+  - States: `loading`, `error`, `success`
+  - Feature names: `notifications`, `settings`, etc.
+
+- **Feature-specific content**: Use dedicated namespace files
+  - Use nested structure for related content: `items.1.title`
+  - Group related translations: `timestamp.3hoursAgo`
+
+#### 5. Handling Dynamic Content
+
+For dynamic content that needs translation:
+
+```tsx
+// ✅ Good: Use translation keys
+const titleKey = `items.${notification.id}.title`;
+const displayTitle = 
+  tNotifications(titleKey) !== titleKey
+    ? tNotifications(titleKey)
+    : notification.title; // Fallback to original
+
+// ❌ Bad: Hardcoded text
+const displayTitle = notification.title; // Only works for one language
+```
+
+#### 6. Accessibility with Translations
+
+Always provide translations for accessibility attributes:
+
+```tsx
+// ✅ Good
+<button aria-label={t('markAsRead')}>
+  <Icons.check />
+</button>
+
+// ❌ Bad
+<button aria-label="标记为已读">
+  <Icons.check />
+</button>
+```
+
+#### 7. Required Translation Keys Checklist
+
+When creating a new module, ensure you have translations for:
+
+- [ ] All button labels
+- [ ] All form labels and placeholders
+- [ ] All error messages
+- [ ] All success messages
+- [ ] All aria-labels and aria-describedby
+- [ ] All tooltips and help text
+- [ ] All empty states
+- [ ] All feature-specific content (if applicable)
+
+### Best Practices
+
+1. **Never hardcode text** - Always use translation keys
+2. **Use appropriate namespace** - Common UI → `common`, Feature content → feature namespace
+3. **Provide fallbacks** - When translation key doesn't exist, fallback to original or English
+4. **Keep keys consistent** - Use the same key names across locales
+5. **Test both locales** - Verify translations work in both `zh` and `en`
+6. **Update both locales** - Always add translations to both `zh` and `en` files
+
+### Example: Complete i18n Implementation
+
+See `src/components/layout/notification-panel.tsx` for a complete example of:
+- Using multiple translation namespaces
+- Handling dynamic translation keys
+- Providing fallbacks
+- Accessibility with translations
+
+---
+
 ## Notes for AI Agents
 
 1. **Always use `cn()` for className merging** - never concatenate strings manually
@@ -537,6 +915,9 @@ See "Theming System" section above or `docs/themes.md`.
 5. **Follow existing patterns** - look at similar components before creating new ones
 6. **Environment variables** - prefix with `NEXT_PUBLIC_` for client-side access
 7. **shadcn components** - don't modify files in `src/components/ui/` directly; extend them instead
+8. **Always internationalize** - never hardcode text, always use translation keys from the start
+9. **Create translation files** - when adding a new feature, create `{feature-name}.json` for both `zh` and `en`
+10. **Register in messages loader** - update `src/i18n/messages.ts` to include your new namespace
 
 # AGENTS
 

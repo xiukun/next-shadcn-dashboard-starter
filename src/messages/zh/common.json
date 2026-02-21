@@ -11,5 +11,12 @@
   "filter": "筛选",
   "loading": "加载中...",
   "error": "错误",
-  "success": "成功"
+  "success": "成功",
+  "notifications": "通知",
+  "notificationsDescription": "查看和管理系统通知",
+  "noNotifications": "暂无通知",
+  "clear": "清空",
+  "viewAllMessages": "查看所有消息",
+  "markAsRead": "标记为已读",
+  "deleteNotification": "删除通知"
 }

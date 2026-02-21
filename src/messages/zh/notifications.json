@@ -1,0 +1,26 @@
+{
+  "items": {
+    "1": {
+      "title": "收到了14份新周报",
+      "description": "描述信息描述信息描述信息"
+    },
+    "2": {
+      "title": "朱偏右 回复了你",
+      "description": "描述信息描述信息描述信息"
+    },
+    "3": {
+      "title": "曲丽丽 评论了你",
+      "description": "描述信息描述信息描述信息"
+    },
+    "4": {
+      "title": "代办提醒",
+      "description": "描述信息描述信息描述信息"
+    }
+  },
+  "timestamp": {
+    "3hoursAgo": "3小时前",
+    "justNow": "刚刚",
+    "1dayAgo": "1天前",
+    "dateFormat": "yyyy-MM-dd"
+  }
+}
