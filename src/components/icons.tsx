@@ -41,7 +41,8 @@ import {
   IconMaximize,
   IconMinimize,
   IconRefresh,
-  IconBell
+  IconBell,
+  IconWand
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -89,5 +90,6 @@ export const Icons = {
   fullscreen: IconMaximize,
   fullscreenExit: IconMinimize,
   refresh: IconRefresh,
-  bell: IconBell
+  bell: IconBell,
+  generativeUI: IconWand
 };

@@ -1,0 +1,13 @@
+{
+  "pageTitle": "AI 生成 UI",
+  "pageDescription": "使用 AI 根据您的描述生成用户界面",
+  "inputTitle": "输入提示",
+  "inputDescription": "描述您想要生成的 UI，AI 将根据您的描述生成相应的界面",
+  "inputPlaceholder": "例如：创建一个登录表单，包含用户名和密码输入框，以及登录按钮",
+  "generateButton": "生成 UI",
+  "clearButton": "清空",
+  "examplesTitle": "示例提示",
+  "outputTitle": "生成的 UI",
+  "outputDescription": "AI 根据您的提示生成的用户界面将显示在这里",
+  "emptyState": "输入提示并点击\"生成 UI\"按钮开始"
+}
