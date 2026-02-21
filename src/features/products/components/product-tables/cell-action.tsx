@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Product } from '@/constants/data';
 import { IconEdit, IconDotsVertical, IconTrash } from '@tabler/icons-react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { useState } from 'react';
 
 interface CellActionProps {

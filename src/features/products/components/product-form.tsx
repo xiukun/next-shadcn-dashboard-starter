@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { Product } from '@/constants/mock-api';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 

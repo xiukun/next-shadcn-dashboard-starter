@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/components/auth/auth-context';
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
 import { IconStar } from '@tabler/icons-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { InteractiveGridPattern } from './interactive-grid';
 
 const loginSchema = z.object({

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 
 import { Button } from '@/components/ui/button';
 
@@ -24,7 +24,7 @@ export default function NotFound() {
           Go back
         </Button>
         <Button
-          onClick={() => router.push('/dashboard')}
+          onClick={() => router.push('/dashboard/overview')}
           variant='ghost'
           size='lg'
         >

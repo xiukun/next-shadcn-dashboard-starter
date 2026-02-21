@@ -4,7 +4,7 @@ import { SignUp as ClerkSignUpForm } from '@clerk/nextjs';
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
 import { IconStar } from '@tabler/icons-react';
 import { Metadata } from 'next';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { InteractiveGridPattern } from './interactive-grid';
 
 export const metadata: Metadata = {

@@ -4,7 +4,7 @@ import PageContainer from '@/components/layout/page-container';
 import { workspacesInfoContent } from '@/config/infoconfig';
 import { useAuthContext } from '@/components/auth/auth-context';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 
 export default function WorkspacesPage() {
   const { organization } = useAuthContext();
@@ -43,7 +43,10 @@ export default function WorkspacesPage() {
             <p className='text-muted-foreground text-sm'>
               当前没有可用的工作空间。你可以在接入真实后端后，在这里展示组织列表。
             </p>
-            <Button variant='outline' onClick={() => router.push('/dashboard')}>
+            <Button
+              variant='outline'
+              onClick={() => router.push('/dashboard/overview')}
+            >
               返回仪表盘
             </Button>
           </div>
