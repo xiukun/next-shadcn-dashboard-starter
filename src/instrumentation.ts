@@ -18,7 +18,12 @@ const sentryOptions: Sentry.NodeOptions | Sentry.EdgeOptions = {
 };
 
 export async function register() {
-  if (!process.env.NEXT_PUBLIC_SENTRY_DISABLED) {
+  // 在构建时（NODE_ENV=production 且非运行时）不初始化 Sentry，避免网络连接问题
+  if (
+    !process.env.NEXT_PUBLIC_SENTRY_DISABLED &&
+    process.env.NEXT_PUBLIC_SENTRY_DSN &&
+    process.env.NODE_ENV !== 'production' // 只在开发环境初始化，生产环境在运行时初始化
+  ) {
     if (process.env.NEXT_RUNTIME === 'nodejs') {
       // Node.js Sentry configuration
       Sentry.init(sentryOptions);

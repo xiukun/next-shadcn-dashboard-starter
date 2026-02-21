@@ -324,9 +324,7 @@ export const navItems: NavItem[] = [
 
   showNextSteps() {
     console.log('📋 Next steps:');
-    console.log(
-      '  1. Run: npm install (or bun install) to remove unused dependencies'
-    );
+    console.log('  1. Run: pnpm install to remove unused dependencies');
     console.log('  2. Review and test your application');
     console.log('  3. To revert cleanup: git restore . (or git checkout .)');
     console.log(
