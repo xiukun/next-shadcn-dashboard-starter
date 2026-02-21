@@ -12,10 +12,12 @@ export interface RouteTab {
 interface RouteTabsStore {
   tabs: RouteTab[];
   activeTabId: string | null;
+  pendingNavigation: string | null; // 正在跳转的目标 canonical path（用于防止在跳转期间重新创建 Tab）
   addTab: (tab: RouteTab) => void;
   updateTabUrl: (tabId: string, url: string) => void;
   removeTab: (tabId: string) => string | null; // 返回新的激活标签页 ID
   setActiveTab: (tabId: string) => void;
+  setPendingNavigation: (canonicalPath: string | null) => void; // 设置/清除正在跳转的目标路由
   closeOtherTabs: (tabId: string) => void;
   closeAllTabs: () => void;
   hasTab: (tabId: string) => boolean;
@@ -37,6 +39,7 @@ export const useRouteTabsStore = create<RouteTabsStore>()(
     (set, get) => ({
       tabs: [DEFAULT_TAB],
       activeTabId: DEFAULT_TAB.id,
+      pendingNavigation: null,
 
       addTab: (tab: RouteTab) => {
         const state = get();
@@ -125,6 +128,10 @@ export const useRouteTabsStore = create<RouteTabsStore>()(
 
       setActiveTab: (tabId: string) => {
         set({ activeTabId: tabId });
+      },
+
+      setPendingNavigation: (canonicalPath: string | null) => {
+        set({ pendingNavigation: canonicalPath });
       },
 
       closeOtherTabs: (tabId: string) => {

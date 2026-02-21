@@ -62,7 +62,14 @@ export function useRouteTabs() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { tabs, activeTabId, addTab, setActiveTab } = useRouteTabsStore();
+  const {
+    tabs,
+    activeTabId,
+    addTab,
+    setActiveTab,
+    pendingNavigation,
+    setPendingNavigation
+  } = useRouteTabsStore();
   const translatedNavItems = useTranslatedNavItems();
   const canonicalPath = normalizePathForTabs(pathname);
 
@@ -70,13 +77,39 @@ export function useRouteTabs() {
   useEffect(() => {
     // 跳过非 dashboard 路由（使用 canonical path 判断，支持多语言前缀）
     if (!canonicalPath.startsWith('/dashboard')) {
+      // 清除 pendingNavigation（如果存在）
+      if (pendingNavigation) {
+        setPendingNavigation(null);
+      }
       return;
+    }
+
+    const {
+      tabs: currentTabs,
+      activeTabId: currentActiveTabId,
+      pendingNavigation: currentPendingNavigation
+    } = useRouteTabsStore.getState();
+
+    // 如果当前路由正在跳转中（pendingNavigation 存在且不等于当前 canonicalPath），
+    // 说明这是路由跳转过程中的中间状态，不应该重新创建 Tab
+    // 只有当 pendingNavigation 等于当前 canonicalPath 时，才表示跳转完成，可以清除 pendingNavigation
+    if (
+      currentPendingNavigation &&
+      currentPendingNavigation !== canonicalPath
+    ) {
+      // 正在跳转到其他路由，当前路由不应该重新创建 Tab
+      return;
+    }
+
+    // 如果 pendingNavigation 等于当前 canonicalPath，说明跳转已完成，清除 pendingNavigation
+    if (currentPendingNavigation === canonicalPath) {
+      setPendingNavigation(null);
     }
 
     const queryString = searchParams.toString();
     const fullUrl = queryString ? `${pathname}?${queryString}` : pathname;
 
-    const existingTab = tabs.find((t) => t.id === canonicalPath);
+    const existingTab = currentTabs.find((t) => t.id === canonicalPath);
 
     // 从导航配置中查找对应的菜单项
     const navItem = findNavItemByUrl(pathname, translatedNavItems);
@@ -114,7 +147,7 @@ export function useRouteTabs() {
 
     if (existingTab) {
       // 确保当前路由对应的 Tab 处于激活状态
-      if (activeTabId !== canonicalPath) {
+      if (currentActiveTabId !== canonicalPath) {
         setActiveTab(canonicalPath);
       }
 
@@ -133,17 +166,19 @@ export function useRouteTabs() {
     pathname,
     canonicalPath,
     searchParams,
-    tabs,
-    activeTabId,
     addTab,
     setActiveTab,
-    translatedNavItems
+    translatedNavItems,
+    pendingNavigation,
+    setPendingNavigation
   ]);
 
   // 切换到指定路由
   const switchToTab = (tabId: string) => {
     const tab = tabs.find((t) => t.id === tabId);
     if (tab) {
+      // 设置 pendingNavigation，防止在路由跳转期间重新创建 Tab
+      setPendingNavigation(tabId);
       router.push(tab.url);
     }
   };
