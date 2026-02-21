@@ -11,6 +11,10 @@ import { SettingsPanel } from './settings-panel';
 import { LanguageSwitcherButton } from './language-switcher-button';
 import { useUserPreferencesStore } from '@/stores/user-preferences-store';
 import { useRouteTabsStore } from '@/stores/route-tabs-store';
+import {
+  useFullscreenStore,
+  initFullscreenListeners
+} from '@/stores/fullscreen-store';
 import { Button } from '../ui/button';
 import { Icons } from '../icons';
 import { useTranslations } from 'next-intl';
@@ -22,6 +26,7 @@ export default function Header() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { enableTabs } = useUserPreferencesStore();
+  const { isFullscreen, toggleFullscreen } = useFullscreenStore();
   const t = useTranslations('common');
 
   // 确保在客户端 hydration 完成后再渲染
@@ -31,6 +36,9 @@ export default function Header() {
     useUserPreferencesStore.persist.rehydrate();
     // 确保 F5 刷新后 tabs 也能从 localStorage 恢复（route-tabs-store 设置了 skipHydration: true）
     useRouteTabsStore.persist.rehydrate();
+    // 初始化全屏事件监听器
+    const cleanup = initFullscreenListeners();
+    return cleanup;
   }, []);
 
   useEffect(() => {
@@ -93,6 +101,20 @@ export default function Header() {
           <SearchInput />
         </div>
         <LanguageSwitcherButton />
+        <Button
+          variant='ghost'
+          size='icon'
+          className='h-9 w-9'
+          onClick={toggleFullscreen}
+          title={isFullscreen ? '退出全屏' : '全屏'}
+        >
+          {isFullscreen ? (
+            <Icons.fullscreenExit className='h-4 w-4' />
+          ) : (
+            <Icons.fullscreen className='h-4 w-4' />
+          )}
+          <span className='sr-only'>{isFullscreen ? '退出全屏' : '全屏'}</span>
+        </Button>
         <UserNav />
         <Button
           variant='ghost'

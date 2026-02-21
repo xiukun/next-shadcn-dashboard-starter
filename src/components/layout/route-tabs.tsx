@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useRouteTabs } from '@/hooks/use-route-tabs';
 import { useRouteTabsStore } from '@/stores/route-tabs-store';
 import { Icons } from '@/components/icons';
@@ -36,6 +37,7 @@ function TabItem({
     closable?: boolean;
   };
 }) {
+  const router = useRouter();
   const { switchToTab } = useRouteTabs();
   const { activeTabId, removeTab, closeOtherTabs, closeAllTabs } =
     useRouteTabsStore();
@@ -57,6 +59,12 @@ function TabItem({
     switchToTab(tab.id);
   };
 
+  const handleRefresh = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // 刷新当前路由
+    router.refresh();
+  };
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -72,6 +80,27 @@ function TabItem({
         >
           {Icon && <Icon className='size-3.5 shrink-0' />}
           <span className='whitespace-nowrap'>{tab.title}</span>
+          {isActive && (
+            <span
+              onClick={handleRefresh}
+              onMouseDown={(e) => e.stopPropagation()}
+              className={cn(
+                'ml-1 rounded-sm p-0.5 opacity-0 transition-opacity group-hover:opacity-100',
+                'hover:bg-muted inline-flex cursor-pointer items-center justify-center'
+              )}
+              role='button'
+              tabIndex={0}
+              title='刷新'
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleRefresh(e as unknown as React.MouseEvent);
+                }
+              }}
+            >
+              <Icons.refresh className='size-3' />
+            </span>
+          )}
           {tab.closable !== false && (
             <span
               onClick={handleClose}

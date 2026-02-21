@@ -37,7 +37,10 @@ import {
   IconStar,
   IconBox,
   IconPalette,
-  IconLanguage
+  IconLanguage,
+  IconMaximize,
+  IconMinimize,
+  IconRefresh
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -81,5 +84,8 @@ export const Icons = {
   exclusive: IconStar,
   account: IconUserCircle,
   profile: IconUser,
-  language: IconLanguage
+  language: IconLanguage,
+  fullscreen: IconMaximize,
+  fullscreenExit: IconMinimize,
+  refresh: IconRefresh
 };
