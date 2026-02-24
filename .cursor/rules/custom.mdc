@@ -3,6 +3,8 @@ name: custom
 description: This is a new rule
 ---
 
+新增功能都要支持多语言切换
+
 # Overview
 
 ## Mini-Cursor Agent Rules (Project)
