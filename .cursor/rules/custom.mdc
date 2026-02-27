@@ -13,7 +13,7 @@ description: This is a new rule
 
 ### 0) Skills（Superpowers）使用规范（强制）
 
-- **必须先选技能再行动**：当用户请求是“研究/逆向/写计划/大改动/多步骤任务”时，先判断是否需要使用 Superpowers skills；需要则先执行 `openskills read <skill-name>` 再继续。
+- **必须先选技能再行动**：当用户请求是“研究/逆向/写计划/大改动/多步骤任务”时，先判断是否需要使用 Superpowers skills；需要则先执行 `openskills read <name>` 再继续。
 - **禁止跳过门禁**：任何绕过下面“/opsx:apply 门禁”的行为都视为违规，即使看起来是“小改动”。
 
 ### 1) 自动逆向存档（无文档存量代码时）
@@ -23,7 +23,7 @@ description: This is a new rule
 - “自动逆向存档 / 逆向规格生成 / 生成 openspec 规格”
 
 AI 必须按顺序执行：
-- **加载研究技能**：`openskills read skill-using-superpowers`，并按其中的“研究/调研”流程执行。
+- **加载研究技能**：`openskills read using-superpowers`，并按其中的“研究/调研”流程执行。
 - **阅读代码**：系统性阅读 `src/`（必要时包含 `package.json`/`tsconfig.json`）并输出模块概览、关键入口、数据流/控制流、对外 API。
 - **执行逆向规格生成**：
   - **首次初始化（没有 `openspec/` 目录时）**：在项目根目录终端运行 `openspec-cn init`
@@ -46,7 +46,7 @@ AI 必须按顺序执行：
     - 不改变系统行为的轻量工作（文档排版、说明性文档、开发工具脚本等）
   - 若用户指定了其它需求文档（例如 `docs/*.md`、Issue/PR 描述、或外部需求文本），以用户指定为准，并在输出中明确引用来源。
 - **加载写计划技能并进行核对**：
-  - 先执行：`openskills read skill-writing-plans`
+  - 先执行：`openskills read writing-plans`
   - 然后输出一份**“需求核对清单（checklist）”**，至少包含：
     - 需求拆解与验收标准（Acceptance Criteria）
     - 需要修改/新增的文件列表（预估即可）
