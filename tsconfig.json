@@ -16,7 +16,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "~/*": ["./public/*"]
+      "~/*": ["./public/*"],
+      "@maita-table/core": ["./packages/maita-table-core/src"],
+      "@maita-table/react": ["./packages/maita-table-react/src"],
+      "@maita-table/react-shadcn": ["./packages/maita-table-react-shadcn/src"]
     },
     "incremental": true,
     "plugins": [

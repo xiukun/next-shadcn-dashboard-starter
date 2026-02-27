@@ -1,0 +1,4 @@
+packages:
+  - 'packages/*'
+  - '.' # 根项目作为一个 workspace
+
