@@ -1031,13 +1031,13 @@ Usage notes:
 </skill>
 
 <skill>
-<name>susing-git-worktrees</name>
+<name>using-git-worktrees</name>
 <description>Use when starting feature work that needs isolation from current workspace or before executing implementation plans - creates isolated git worktrees with smart directory selection and safety verification</description>
 <location>project</location>
 </skill>
 
 <skill>
-<name>susing-superpowers</name>
+<name>using-superpowers</name>
 <description>Use when starting any conversation - establishes mandatory workflows for finding and using skills, including using Skill tool before announcing usage, following brainstorming before coding, and creating TodoWrite todos for checklists</description>
 <location>project</location>
 </skill>
