@@ -1,0 +1,11 @@
+{
+  "title": "表格性能演示",
+  "description": "基于 @maita-table（TanStack Table + 虚拟化）渲染 10,000 行数据。",
+  "columns": {
+    "id": "ID",
+    "name": "名称",
+    "price": "价格",
+    "status": "状态"
+  }
+}
+

@@ -42,7 +42,19 @@ describe('<DataGrid />', () => {
     const dataSource = createDataSource(rows);
 
     render(
-      <DataGrid<Row> id='test-grid' columns={columns} dataSource={dataSource} />
+      <DataGrid<Row>
+        id='test-grid'
+        columns={columns}
+        dataSource={dataSource}
+        initialViewState={{ pageSize: 10000 }}
+      />
+    );
+
+    expect(dataSource.fetch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        page: expect.objectContaining({ index: 0, size: 10000 })
+      }),
+      expect.anything()
     );
 
     expect(await screen.findByText('Alice')).toBeInTheDocument();

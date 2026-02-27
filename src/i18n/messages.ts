@@ -13,7 +13,8 @@ export async function loadMessages(locale: string) {
       language,
       settings,
       notifications,
-      jsonRender
+      jsonRender,
+      maitaTableDemo
     ] = await Promise.all([
       import(`@/messages/${locale}/nav.json`).then((m) => m.default),
       import(`@/messages/${locale}/common.json`).then((m) => m.default),
@@ -21,7 +22,10 @@ export async function loadMessages(locale: string) {
       import(`@/messages/${locale}/language.json`).then((m) => m.default),
       import(`@/messages/${locale}/settings.json`).then((m) => m.default),
       import(`@/messages/${locale}/notifications.json`).then((m) => m.default),
-      import(`@/messages/${locale}/json-render.json`).then((m) => m.default)
+      import(`@/messages/${locale}/json-render.json`).then((m) => m.default),
+      import(`@/messages/${locale}/maita-table-demo.json`).then(
+        (m) => m.default
+      )
     ]);
 
     // Merge all messages into a single object
@@ -32,7 +36,8 @@ export async function loadMessages(locale: string) {
       language,
       settings,
       notifications,
-      'json-render': jsonRender
+      'json-render': jsonRender,
+      'maita-table-demo': maitaTableDemo
     };
   } catch (error) {
     console.error(`Failed to load messages for locale: ${locale}`, error);
@@ -48,7 +53,8 @@ export async function loadMessages(locale: string) {
       language: {},
       settings: {},
       notifications: {},
-      'json-render': {}
+      'json-render': {},
+      'maita-table-demo': {}
     };
   }
 }

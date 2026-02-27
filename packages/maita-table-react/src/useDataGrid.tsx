@@ -1,8 +1,11 @@
+'use client';
+
 import * as React from 'react';
 import type {
   ColumnConfig,
   DataGridControllerState,
   DataGridResult,
+  DataGridViewState,
   DataSource
 } from '@maita-table/core';
 import { createDefaultController } from '@maita-table/core';
@@ -12,6 +15,7 @@ export interface UseDataGridProps<Row> {
   id: string;
   columns: ColumnConfig<Row>[];
   dataSource: DataSource<Row>;
+  initialViewState?: Partial<DataGridViewState<Row>>;
 }
 
 export interface UseDataGridResult<Row> {
@@ -22,7 +26,7 @@ export interface UseDataGridResult<Row> {
 export function useDataGrid<Row>(
   props: UseDataGridProps<Row>
 ): UseDataGridResult<Row> {
-  const { columns, dataSource } = props;
+  const { columns, dataSource, initialViewState } = props;
 
   const storeRef = React.useRef<ReactDataGridStore<Row> | undefined>(undefined);
 
@@ -38,12 +42,14 @@ export function useDataGrid<Row>(
         paginationMode: 'page',
         pageIndex: 0,
         pageSize: 20,
-        density: 'comfortable'
+        density: 'comfortable',
+        ...(initialViewState ?? {})
       },
       runtime: {
         loading: false,
         selection: new Set(),
         expandedRowKeys: new Set(),
+        editingDraftValues: {},
         validationErrors: {},
         scrollTop: 0,
         scrollLeft: 0

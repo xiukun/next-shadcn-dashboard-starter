@@ -42,7 +42,8 @@ import {
   IconMinimize,
   IconRefresh,
   IconBell,
-  IconWand
+  IconWand,
+  IconTable
 } from '@tabler/icons-react';
 
 export type Icon = React.ComponentType<IconProps>;
@@ -91,5 +92,6 @@ export const Icons = {
   fullscreenExit: IconMinimize,
   refresh: IconRefresh,
   bell: IconBell,
-  generativeUI: IconWand
+  generativeUI: IconWand,
+  table: IconTable
 };

@@ -1,0 +1,11 @@
+{
+  "title": "Table Performance Demo",
+  "description": "Render 10,000 rows with @maita-table (TanStack Table + virtualization).",
+  "columns": {
+    "id": "ID",
+    "name": "Name",
+    "price": "Price",
+    "status": "Status"
+  }
+}
+
