@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import type { ColumnConfig, DataSource } from '@maita-table/core';
+import type { ColumnConfig, DataSource, ColumnMeta } from '@maita-table/core';
 import type { DataGridViewState } from '@maita-table/core';
 import {
   flexRender,
@@ -11,6 +11,7 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useDataGrid } from './useDataGrid';
+import { NumberCell } from './cells/number-cell';
 
 export interface DataGridProps<Row> {
   id: string;
@@ -22,7 +23,7 @@ export interface DataGridProps<Row> {
 
 export function DataGrid<Row>(props: DataGridProps<Row>) {
   const { columns, estimateRowHeight = 36 } = props;
-  const { state } = useDataGrid<Row>(props);
+  const { state, store } = useDataGrid<Row>(props);
 
   const visibleColumns = React.useMemo(
     () => columns.filter((col) => col.visible !== false),
@@ -34,7 +35,10 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
       return {
         id: col.id,
         header: () => col.header,
-        accessorFn: (row) => col.accessor(row)
+        accessorFn: (row) => col.accessor(row),
+        // 由于 TanStack Table 的 ColumnMeta 类型与 core 中的 ColumnMeta 不同，这里仅做透传，类型上保持为 any
+        // 由 DataGrid 内部按约定字段读取（editable/editorType 等）
+        meta: col.meta as any
       };
     });
   }, [visibleColumns]);
@@ -108,17 +112,94 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                   className='mt-grid-tr hover:bg-muted/40 border-b transition-colors last:border-b-0'
                   style={{ height: virtualRow.size }}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className='mt-grid-td px-3 py-2 align-middle whitespace-nowrap'
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </td>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const columnId = cell.column.id;
+                    const meta = cell.column
+                      .columnDef.meta as ColumnMeta<Row> | undefined;
+                    const rowKey = row.id;
+                    const cellKey = `${rowKey}:${columnId}`;
+                    const drafts = state.runtime.editingDraftValues;
+                    const draftValue =
+                      drafts && Object.prototype.hasOwnProperty.call(drafts, cellKey)
+                        ? drafts[cellKey]
+                        : undefined;
+                    const cellValue = cell.getValue();
+
+                    const isEditing =
+                      !!state.runtime.editingCell &&
+                      state.runtime.editingCell.rowKey === rowKey &&
+                      state.runtime.editingCell.columnId === columnId;
+
+                    const isNumberLike =
+                      meta?.type === 'number' || meta?.type === 'integer';
+
+                    if (isNumberLike) {
+                      return (
+                        <NumberCell
+                          key={cell.id}
+                          value={cellValue}
+                          draftValue={draftValue}
+                          meta={meta}
+                          isEditing={!!meta?.editable && isEditing}
+                          onStartEdit={() => {
+                            if (!meta?.editable) return;
+                            store.dispatch({
+                              type: 'edit/start',
+                              cell: { rowKey, columnId },
+                              initialValue: cellValue
+                            });
+                          }}
+                          onChangeDraft={(val) =>
+                            store.dispatch({
+                              type: 'edit/change',
+                              cell: { rowKey, columnId },
+                              value: val
+                            })
+                          }
+                          onCommit={(nextNumber) => {
+                            const current = store.getState();
+                            const nextRows = current.data.rows.map((r, index) => {
+                              if (index !== row.index) return r;
+                              if (nextNumber == null) return r;
+                              return {
+                                ...(r as any),
+                                [columnId]: nextNumber
+                              };
+                            });
+                            store.setState({
+                              ...current,
+                              data: {
+                                ...current.data,
+                                rows: nextRows
+                              }
+                            });
+                            store.dispatch({
+                              type: 'edit/commit',
+                              cell: { rowKey, columnId }
+                            });
+                          }}
+                          onCancel={() =>
+                            store.dispatch({
+                              type: 'edit/cancel',
+                              cell: { rowKey, columnId }
+                            })
+                          }
+                        />
+                      );
+                    }
+
+                    return (
+                      <td
+                        key={cell.id}
+                        className='mt-grid-td px-3 py-2 align-middle whitespace-nowrap'
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        ) ?? String(cellValue ?? '')}
+                      </td>
+                    );
+                  })}
                 </tr>
               );
             })}

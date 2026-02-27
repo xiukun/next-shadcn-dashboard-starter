@@ -5,6 +5,7 @@
     "id": "ID",
     "name": "名称",
     "price": "价格",
+    "change": "变化率",
     "status": "状态"
   }
 }

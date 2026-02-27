@@ -24,6 +24,7 @@ function createInitialState(): DataGridControllerState<Row> {
       loading: false,
       selection: new Set(),
       expandedRowKeys: new Set(),
+      editingDraftValues: {},
       validationErrors: {},
       scrollTop: 0,
       scrollLeft: 0
@@ -71,5 +72,35 @@ describe('createDefaultController', () => {
       patch: { loading: true }
     });
     expect(next.runtime.loading).toBe(true);
+  });
+
+  it('manages editing drafts via edit events', () => {
+    const controller = createDefaultController<Row>();
+    const state = createInitialState();
+
+    const started = controller.reduce(state, {
+      type: 'edit/start',
+      cell: { rowKey: 1, columnId: 'name' },
+      initialValue: 'Row 1'
+    });
+
+    expect(started.runtime.editingCell).toEqual({ rowKey: 1, columnId: 'name' });
+    expect(started.runtime.editingDraftValues['1:name']).toBe('Row 1');
+
+    const changed = controller.reduce(started, {
+      type: 'edit/change',
+      cell: { rowKey: 1, columnId: 'name' },
+      value: 'New Name'
+    });
+
+    expect(changed.runtime.editingDraftValues['1:name']).toBe('New Name');
+
+    const committed = controller.reduce(changed, {
+      type: 'edit/commit',
+      cell: { rowKey: 1, columnId: 'name' }
+    });
+
+    expect(committed.runtime.editingCell).toBeUndefined();
+    expect(committed.runtime.editingDraftValues['1:name']).toBeUndefined();
   });
 });

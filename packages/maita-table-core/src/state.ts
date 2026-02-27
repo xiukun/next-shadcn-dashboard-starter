@@ -31,6 +31,10 @@ export interface DataGridRuntimeState<Row = any> {
   selection: Set<RowKey>;
   expandedRowKeys: Set<RowKey>;
   editingCell?: EditCell;
+  /**
+   * 暂存编辑中的单元格值，key 形如 `${rowKey}:${columnId}`
+   */
+  editingDraftValues: Record<string, unknown>;
   validationErrors: Record<string, string>;
   scrollTop: number;
   scrollLeft: number;

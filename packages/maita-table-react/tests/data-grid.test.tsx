@@ -60,4 +60,6 @@ describe('<DataGrid />', () => {
     expect(await screen.findByText('Alice')).toBeInTheDocument();
     expect(await screen.findByText('Bob')).toBeInTheDocument();
   });
+
+  // 编辑相关行为在 core 层有单独测试，这里只做渲染与数据请求的 smoke test。
 });

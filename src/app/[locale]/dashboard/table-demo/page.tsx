@@ -9,6 +9,7 @@ type DemoRow = {
   id: number;
   name: string;
   price: number;
+  change: number;
   status: 'active' | 'archived';
 };
 
@@ -31,7 +32,41 @@ export default function Page() {
     {
       id: 'price',
       header: t('columns.price'),
-      accessor: (row) => row.price
+      accessor: (row) => row.price,
+      meta: {
+        type: 'number',
+        editable: true,
+        editorType: 'number',
+        min: 0,
+        max: 9999,
+        decimals: 2,
+        step: 0.1,
+        allowNegative: false,
+        align: 'right',
+        locale: 'zh-CN',
+        thousandSeparator: true,
+        currency: 'CNY',
+        formatStyle: 'currency',
+        colorBySign: true
+      }
+    },
+    {
+      id: 'change',
+      header: t('columns.change'),
+      accessor: (row) => row.change,
+      meta: {
+        type: 'number',
+        editable: false,
+        editorType: 'number',
+        min: -1,
+        max: 1,
+        decimals: 1,
+        step: 0.1,
+        allowNegative: true,
+        align: 'right',
+        formatStyle: 'percent',
+        colorBySign: true
+      }
     },
     {
       id: 'status',

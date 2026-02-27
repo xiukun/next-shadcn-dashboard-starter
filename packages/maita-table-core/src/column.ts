@@ -11,6 +11,27 @@ export type ColumnMeta<Row = any, Value = any> = {
     | 'custom';
   editable?: boolean;
   required?: boolean;
+  /**
+   * 针对数值列的最小/最大值约束
+   */
+  min?: number;
+  max?: number;
+  /**
+   * 针对数值列的小数位精度（例如 2 表示保留两位小数）
+   */
+  decimals?: number;
+  /**
+   * 数值编辑时的步进值（用于键盘上下箭头调整），默认 1
+   */
+  step?: number;
+  /**
+   * 是否允许负数，默认 true
+   */
+  allowNegative?: boolean;
+  /**
+   * 列对齐方式，默认为 left
+   */
+  align?: 'left' | 'right' | 'center';
   access?: {
     roles?: string[];
     permissions?: string[];

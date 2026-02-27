@@ -5,6 +5,7 @@
     "id": "ID",
     "name": "Name",
     "price": "Price",
+    "change": "Change",
     "status": "Status"
   }
 }

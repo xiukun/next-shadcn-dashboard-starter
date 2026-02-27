@@ -5,6 +5,7 @@ type DemoRow = {
   id: number;
   name: string;
   price: number;
+  change: number; // 变化率，-1.0 ~ 1.0
   status: 'active' | 'archived';
 };
 
@@ -15,6 +16,7 @@ function makeRow(id: number): DemoRow {
     id,
     name: `Row ${id}`,
     price: (id % 1000) / 10,
+    change: ((id % 21) - 10) / 10, // -1.0 ~ 1.0，包含负数与正数
     status: id % 10 === 0 ? 'archived' : 'active'
   };
 }

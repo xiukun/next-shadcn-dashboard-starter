@@ -10,6 +10,24 @@ export type DataGridInternalEvent<Row = any> =
   | {
       type: 'runtime/patch';
       patch: Partial<DataGridControllerState<Row>['runtime']>;
+    }
+  | {
+      type: 'edit/start';
+      cell: DataGridControllerState<Row>['runtime']['editingCell'];
+      initialValue: unknown;
+    }
+  | {
+      type: 'edit/change';
+      cell: DataGridControllerState<Row>['runtime']['editingCell'];
+      value: unknown;
+    }
+  | {
+      type: 'edit/cancel';
+      cell: DataGridControllerState<Row>['runtime']['editingCell'];
+    }
+  | {
+      type: 'edit/commit';
+      cell: DataGridControllerState<Row>['runtime']['editingCell'];
     };
 
 export interface DataGridController<Row = any> {
@@ -85,6 +103,70 @@ export function createDefaultController<Row = any>(): DataGridController<Row> {
               ...event.patch
             }
           };
+        case 'edit/start': {
+          const cell = event.cell;
+          if (!cell) return state;
+          const key = `${cell.rowKey}:${cell.columnId}`;
+          return {
+            ...state,
+            runtime: {
+              ...state.runtime,
+              editingCell: cell,
+              editingDraftValues: {
+                ...state.runtime.editingDraftValues,
+                [key]: event.initialValue
+              }
+            }
+          };
+        }
+        case 'edit/change': {
+          const cell = event.cell;
+          if (!cell) return state;
+          const key = `${cell.rowKey}:${cell.columnId}`;
+          return {
+            ...state,
+            runtime: {
+              ...state.runtime,
+              editingDraftValues: {
+                ...state.runtime.editingDraftValues,
+                [key]: event.value
+              }
+            }
+          };
+        }
+        case 'edit/cancel': {
+          const cell = event.cell;
+          if (!cell) return state;
+          const key = `${cell.rowKey}:${cell.columnId}`;
+          const { [key]: _removed, ...restDrafts } = state.runtime.editingDraftValues;
+          return {
+            ...state,
+            runtime: {
+              ...state.runtime,
+              editingCell:
+                state.runtime.editingCell &&
+                state.runtime.editingCell.rowKey === cell.rowKey &&
+                state.runtime.editingCell.columnId === cell.columnId
+                  ? undefined
+                  : state.runtime.editingCell,
+              editingDraftValues: restDrafts
+            }
+          };
+        }
+        case 'edit/commit': {
+          const cell = event.cell;
+          if (!cell) return state;
+          const key = `${cell.rowKey}:${cell.columnId}`;
+          const { [key]: _removed, ...restDrafts } = state.runtime.editingDraftValues;
+          return {
+            ...state,
+            runtime: {
+              ...state.runtime,
+              editingCell: undefined,
+              editingDraftValues: restDrafts
+            }
+          };
+        }
         default:
           return state;
       }
