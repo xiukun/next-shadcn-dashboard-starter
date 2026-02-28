@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { z } from 'zod';
 import { DataGrid, type EditMode } from '@maita-table/react';
 import { createNextDataSource } from '@maita-table/next';
 import type { ColumnConfig } from '@maita-table/core';
@@ -44,12 +45,11 @@ export default function Page() {
         editable: true,
         editorType: 'text',
         maxLength: 30,
-        validate: (value: string) => {
-          const v = value?.trim?.() ?? '';
-          if (!v) return t('errors.nameRequired' as any);
-          if (v.length > 10) return t('errors.nameTooLong' as any);
-          return null;
-        }
+        zodSchema: z
+          .string()
+          .trim()
+          .min(1, { message: t('errors.nameRequired' as any) })
+          .max(10, { message: t('errors.nameTooLong' as any) })
       }
     },
     {

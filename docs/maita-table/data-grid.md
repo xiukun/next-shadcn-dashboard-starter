@@ -90,8 +90,7 @@ export default function Page() {
 - **`meta.editorType?: 'text' | 'number' | 'checkbox' | ...`**：编辑器类型。
 - **`meta.required?: boolean`**：必填约束（字符串在当前实现中会强制非空）。
 - **`meta.min/max`**：数值范围约束。
-- **`meta.validate?: (value, row) => string | null | undefined`**：旧式验证（向后兼容）。
-- **`meta.zodSchema?: ZodType<Value>`**：列级 Zod Schema（优先级高于 `validate`）。
+- **`meta.zodSchema?: ZodType<Value>`**：列级 Zod Schema（唯一结构化验证途径）。
 
 ---
 
@@ -252,7 +251,7 @@ Array<{ rowKey: string; row: Row }>
 
 ### Q3：验证如何配置？
 
-- **列级**：`meta.zodSchema`（优先）或 `meta.validate`
+- **列级**：`meta.zodSchema`（基于 Zod 的列级 Schema）
 - **行级**：`createRowSchema(columns)`（内部已用于 `useTableSubmission` 的行级校验）
 
 ---
