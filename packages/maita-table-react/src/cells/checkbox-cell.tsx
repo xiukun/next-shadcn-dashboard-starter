@@ -6,7 +6,7 @@ import type { ColumnMeta } from '@maita-table/core';
 export interface CheckboxCellProps {
   value: unknown;
   meta?: ColumnMeta<any, any>;
-  error?: string;
+  error?: string | null;
   isModified?: boolean;
   onToggle: (next: boolean) => void;
 }

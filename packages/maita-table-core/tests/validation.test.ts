@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createColumnSchema, createRowSchema } from '../src/validation';
 import type { ColumnConfig, ColumnMeta } from '../src/column';
 
@@ -76,6 +76,28 @@ describe('validation', () => {
       const schema = createColumnSchema(column, column.meta);
       expect(schema.parse('test@example.com')).toBe('test@example.com');
       expect(() => schema.parse('invalid-email')).toThrow();
+    });
+
+    it('should warn when using legacy validate without zodSchema', () => {
+      const column: ColumnConfig<any, string> = {
+        id: 'legacy',
+        header: 'Legacy',
+        accessor: (row) => row.legacy,
+        meta: {
+          type: 'string',
+          // legacy validate 应被忽略，仅触发警告
+          validate: (value: string) => (!value ? 'required' : undefined)
+        } as ColumnMeta<any, string>
+      };
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const schema = createColumnSchema(column, column.meta);
+      // 不再根据 validate 阻止提交：空字符串不会抛错
+      expect(schema.parse('')).toBe('');
+      expect(warnSpy).toHaveBeenCalled();
+
+      warnSpy.mockRestore();
     });
   });
 

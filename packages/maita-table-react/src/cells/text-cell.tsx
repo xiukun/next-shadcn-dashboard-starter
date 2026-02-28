@@ -8,7 +8,7 @@ export interface TextCellProps {
   draftValue?: unknown;
   meta?: ColumnMeta<any, any>;
   isEditing: boolean;
-  error?: string;
+  error?: string | null;
   isModified?: boolean;
   onStartEdit: () => void;
   onChangeDraft: (next: string) => void;

@@ -10,30 +10,35 @@ export function createColumnSchema<Row, Value>(
     return meta.zodSchema as z.ZodType<Value>;
   }
 
-  let schema: z.ZodType<Value>;
+  // 内部构建时使用更宽松的类型，最后再统一收窄为 ZodType<Value>
+  let schema: z.ZodTypeAny;
 
   // 基础类型
   switch (meta?.type) {
     case 'number':
-    case 'integer':
-      schema = z.number() as z.ZodType<Value>;
+    case 'integer': {
+      let numberSchema = z.number();
       if (meta?.min !== undefined) {
-        schema = (schema as z.ZodNumber).min(meta.min) as z.ZodType<Value>;
+        numberSchema = numberSchema.min(meta.min);
       }
       if (meta?.max !== undefined) {
-        schema = (schema as z.ZodNumber).max(meta.max) as z.ZodType<Value>;
+        numberSchema = numberSchema.max(meta.max);
       }
       if (meta?.type === 'integer') {
-        schema = (schema as z.ZodNumber).int() as z.ZodType<Value>;
+        numberSchema = numberSchema.int();
       }
+      schema = numberSchema;
       break;
-    case 'string':
-      schema = z.string() as z.ZodType<Value>;
+    }
+    case 'string': {
+      let stringSchema = z.string();
       // 如果 required 为 true，确保非空字符串
       if (meta?.required === true) {
-        schema = (schema as z.ZodString).min(1) as z.ZodType<Value>;
+        stringSchema = stringSchema.min(1);
       }
+      schema = stringSchema;
       break;
+    }
     case 'boolean': {
       // 对于带 trueValue/falseValue 的布尔列，既允许 boolean，也允许底层字符串值
       const hasMappedValues =
@@ -48,37 +53,40 @@ export function createColumnSchema<Row, Value>(
           z.boolean(),
           z.literal(trueValue),
           z.literal(falseValue)
-        ]) as unknown as z.ZodType<Value>;
+        ]);
       } else {
-        schema = z.boolean() as z.ZodType<Value>;
+        schema = z.boolean();
       }
       break;
     }
     case 'date':
     case 'datetime':
-      schema = z.date() as z.ZodType<Value>;
+      schema = z.date();
       break;
     default:
-      schema = z.unknown() as z.ZodType<Value>;
+      schema = z.unknown();
   }
 
   // 必填验证
   if (meta?.required === false) {
-    schema = schema.optional() as z.ZodType<Value>;
+    schema = schema.optional();
   }
 
-  // 自定义验证（向后兼容）
-  if (meta?.validate && !meta?.zodSchema) {
-    schema = schema.refine(
-      (val) => {
-        const result = meta.validate!(val, {} as Row);
-        return result === null || result === undefined;
-      },
-      { message: (meta.validate as any).toString() }
-    ) as z.ZodType<Value>;
+  // 兼容期提示：存在 legacy validate 但未提供 zodSchema 时，仅在开发环境给出警告，
+  // 实际校验仍完全由 Zod Schema 决定（即不再依赖 meta.validate 执行结构化校验）
+  if (
+    meta?.validate &&
+    !meta?.zodSchema &&
+    process.env.NODE_ENV !== 'production'
+  ) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[maita-table] Column "${column.id}" 使用了 meta.validate，但校验已收敛为 Zod-only。` +
+        '请改用 meta.zodSchema 定义结构化验证规则。'
+    );
   }
 
-  return schema;
+  return schema as z.ZodType<Value>;
 }
 
 export function createRowSchema<Row>(

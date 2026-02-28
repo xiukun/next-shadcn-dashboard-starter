@@ -3,6 +3,7 @@
 import * as React from 'react';
 import type { ColumnConfig, DataSource, ColumnMeta } from '@maita-table/core';
 import type { DataGridViewState } from '@maita-table/core';
+import { createColumnSchema } from '@maita-table/core';
 import {
   flexRender,
   getCoreRowModel,
@@ -71,6 +72,14 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
     () => columns.filter((col) => col.visible !== false),
     [columns]
   );
+
+  const columnSchemas = React.useMemo(() => {
+    const map: Record<string, unknown> = {};
+    columns.forEach((col) => {
+      map[col.id] = createColumnSchema(col, col.meta);
+    });
+    return map;
+  }, [columns]);
 
   const columnDefs = React.useMemo<Array<ColumnDef<Row>>>(() => {
     return visibleColumns.map((col) => {
@@ -251,19 +260,25 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                           ? draftValue
                           : cellValue;
 
-                    const error = state.runtime.validationErrors[cellKey];
+                    const rawError = state.runtime.validationErrors[cellKey];
+
+                    const columnSchema = columnSchemas[columnId] as {
+                      safeParse?: (value: unknown) => {
+                        success: boolean;
+                        error?: { issues?: Array<{ message: string }> };
+                      };
+                    };
 
                     const validateBeforeCommit = (
                       next: unknown
                     ): string | null => {
-                      if (meta?.validate) {
-                        const msg = meta.validate(
-                          next as any,
-                          row.original as any
-                        );
-                        return msg ?? null;
-                      }
-                      return null;
+                      if (!columnSchema?.safeParse) return null;
+                      const result = columnSchema.safeParse(next);
+                      if (result.success) return null;
+                      const firstIssue =
+                        (result as any).error?.issues?.[0]?.message ??
+                        '无效的值';
+                      return firstIssue;
                     };
 
                     const setError = (msg: string | null) => {
@@ -299,7 +314,7 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                           draftValue={draftValue}
                           meta={meta}
                           isEditing={!!meta?.editable && isEditing}
-                          error={error}
+                          error={isEditing || hasPendingEdit ? rawError : null}
                           isModified={hasPendingEdit}
                           onMoveFocus={(direction) => {
                             const target = findNextEditableCellIndex(
@@ -421,7 +436,7 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                           draftValue={draftValue}
                           meta={meta}
                           isEditing={!!meta?.editable && isEditing}
-                          error={error}
+                          error={isEditing || hasPendingEdit ? rawError : null}
                           isModified={hasPendingEdit}
                           onStartEdit={() => {
                             if (!meta?.editable) return;
@@ -559,7 +574,11 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                           key={cell.id}
                           value={displayValueForCheckbox}
                           meta={meta}
-                          error={error}
+                          error={
+                            isEditing || hasPendingEditForCheckbox
+                              ? rawError
+                              : null
+                          }
                           isModified={hasPendingEditForCheckbox}
                           onToggle={(nextBool) => {
                             const rawValue =
@@ -612,9 +631,9 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                       <td
                         key={cell.id}
                         className={`mt-grid-td px-3 py-2 align-middle whitespace-nowrap ${
-                          error ? 'text-destructive' : ''
+                          rawError ? 'text-destructive' : ''
                         }`}
-                        title={error}
+                        title={rawError || undefined}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,

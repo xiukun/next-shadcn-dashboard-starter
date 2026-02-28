@@ -37,6 +37,9 @@ export type ColumnMeta<Row = any, Value = any> = {
     permissions?: string[];
   };
   formatter?: (value: Value, row: Row) => unknown;
+  /**
+   * @deprecated 请改用 zodSchema 进行结构化验证
+   */
   validate?: (value: Value, row: Row) => string | null | undefined;
   editorType?: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'custom';
   /**
