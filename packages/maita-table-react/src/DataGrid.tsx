@@ -15,6 +15,8 @@ import { NumberCell } from './cells/number-cell';
 import { TextCell } from './cells/text-cell';
 import { CheckboxCell } from './cells/checkbox-cell';
 import { SubmissionControls } from './components/SubmissionControls';
+import { useDebouncedCallback } from './hooks/useDebounce';
+import { useThrottledCallback } from './hooks/useThrottle';
 
 export type EditMode = 'immediate' | 'single-row' | 'batch';
 
@@ -36,6 +38,30 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
     onSubmit
   } = props;
   const { state, store } = useDataGrid<Row>(props);
+
+  // 防抖处理编辑草稿值更新（150ms）
+  const debouncedDispatchChange = useDebouncedCallback(
+    (cell: { rowKey: string; columnId: string }, value: unknown) => {
+      store.dispatch({
+        type: 'edit/change',
+        cell,
+        value
+      });
+    },
+    150
+  );
+
+  // 节流处理验证（300ms）
+  const throttledValidate = useThrottledCallback(
+    (
+      validateFn: () => string | null,
+      setErrorFn: (msg: string | null) => void
+    ) => {
+      const msg = validateFn();
+      setErrorFn(msg);
+    },
+    300
+  );
 
   const visibleColumns = React.useMemo(
     () => columns.filter((col) => col.visible !== false),
@@ -296,14 +322,13 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                             });
                           }}
                           onChangeDraft={(val) => {
-                            store.dispatch({
-                              type: 'edit/change',
-                              cell: { rowKey, columnId },
-                              value: val
-                            });
-                            // 即时校验：输入过程中如果已通过校验，及时清除错误样式
-                            const msg = validateBeforeCommit(val);
-                            setError(msg);
+                            // 使用防抖更新草稿值
+                            debouncedDispatchChange({ rowKey, columnId }, val);
+                            // 使用节流进行验证
+                            throttledValidate(
+                              () => validateBeforeCommit(val),
+                              setError
+                            );
                           }}
                           onCommit={(nextNumber) => {
                             const msg = validateBeforeCommit(nextNumber);
@@ -394,13 +419,13 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                             });
                           }}
                           onChangeDraft={(val) => {
-                            store.dispatch({
-                              type: 'edit/change',
-                              cell: { rowKey, columnId },
-                              value: val
-                            });
-                            const msg = validateBeforeCommit(val);
-                            setError(msg);
+                            // 使用防抖更新草稿值
+                            debouncedDispatchChange({ rowKey, columnId }, val);
+                            // 使用节流进行验证
+                            throttledValidate(
+                              () => validateBeforeCommit(val),
+                              setError
+                            );
                           }}
                           onCommit={(nextText) => {
                             const msg = validateBeforeCommit(nextText);
