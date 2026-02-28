@@ -7,18 +7,21 @@
   "types": "src/index.ts",
   "sideEffects": false,
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "@tanstack/react-table": "^8.0.0",
     "@tanstack/react-virtual": "^3.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "zustand": "^5.0.0"
   },
   "dependencies": {
-    "@maita-table/core": "workspace:*"
+    "@maita-table/core": "workspace:*",
+    "lodash-es": "^4.17.23"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.12"
   }
 }
-
