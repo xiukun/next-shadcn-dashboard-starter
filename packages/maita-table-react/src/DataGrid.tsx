@@ -14,6 +14,9 @@ import { useDataGrid } from './useDataGrid';
 import { NumberCell } from './cells/number-cell';
 import { TextCell } from './cells/text-cell';
 import { CheckboxCell } from './cells/checkbox-cell';
+import { SubmissionControls } from './components/SubmissionControls';
+
+export type EditMode = 'immediate' | 'single-row' | 'batch';
 
 export interface DataGridProps<Row> {
   id: string;
@@ -21,10 +24,17 @@ export interface DataGridProps<Row> {
   dataSource: DataSource<Row>;
   estimateRowHeight?: number;
   initialViewState?: Partial<DataGridViewState<Row>>;
+  editMode?: EditMode;
+  onSubmit?: (edits: Array<{ rowKey: string; row: Row }>) => Promise<void>;
 }
 
 export function DataGrid<Row>(props: DataGridProps<Row>) {
-  const { columns, estimateRowHeight = 36 } = props;
+  const {
+    columns,
+    estimateRowHeight = 36,
+    editMode = 'immediate',
+    onSubmit
+  } = props;
   const { state, store } = useDataGrid<Row>(props);
 
   const visibleColumns = React.useMemo(
@@ -303,28 +313,42 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                             }
                             setError(null);
 
-                            const current = store.getState();
-                            const nextRows = current.data.rows.map(
-                              (r, index) => {
-                                if (index !== row.index) return r;
-                                if (nextNumber == null) return r;
-                                return {
-                                  ...(r as any),
-                                  [columnId]: nextNumber
-                                };
-                              }
-                            );
-                            store.setState({
-                              ...current,
-                              data: {
-                                ...current.data,
-                                rows: nextRows
-                              }
-                            });
-                            store.dispatch({
-                              type: 'edit/commit',
-                              cell: { rowKey, columnId }
-                            });
+                            if (editMode === 'immediate') {
+                              // 即时提交模式：立即更新数据
+                              const current = store.getState();
+                              const nextRows = current.data.rows.map(
+                                (r, index) => {
+                                  if (index !== row.index) return r;
+                                  if (nextNumber == null) return r;
+                                  return {
+                                    ...(r as any),
+                                    [columnId]: nextNumber
+                                  };
+                                }
+                              );
+                              store.setState({
+                                ...current,
+                                data: {
+                                  ...current.data,
+                                  rows: nextRows
+                                }
+                              });
+                              store.dispatch({
+                                type: 'edit/commit',
+                                cell: { rowKey, columnId }
+                              });
+                            } else {
+                              // 单行或批量模式：加入队列
+                              store.dispatch({
+                                type: 'edit/queue',
+                                cell: { rowKey, columnId },
+                                value: nextNumber
+                              });
+                              store.dispatch({
+                                type: 'edit/commit',
+                                cell: { rowKey, columnId }
+                              });
+                            }
                           }}
                           onCancel={() =>
                             store.dispatch({
@@ -386,27 +410,41 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                             }
                             setError(null);
 
-                            const current = store.getState();
-                            const nextRows = current.data.rows.map(
-                              (r, index) => {
-                                if (index !== row.index) return r;
-                                return {
-                                  ...(r as any),
-                                  [columnId]: nextText
-                                };
-                              }
-                            );
-                            store.setState({
-                              ...current,
-                              data: {
-                                ...current.data,
-                                rows: nextRows
-                              }
-                            });
-                            store.dispatch({
-                              type: 'edit/commit',
-                              cell: { rowKey, columnId }
-                            });
+                            if (editMode === 'immediate') {
+                              // 即时提交模式：立即更新数据
+                              const current = store.getState();
+                              const nextRows = current.data.rows.map(
+                                (r, index) => {
+                                  if (index !== row.index) return r;
+                                  return {
+                                    ...(r as any),
+                                    [columnId]: nextText
+                                  };
+                                }
+                              );
+                              store.setState({
+                                ...current,
+                                data: {
+                                  ...current.data,
+                                  rows: nextRows
+                                }
+                              });
+                              store.dispatch({
+                                type: 'edit/commit',
+                                cell: { rowKey, columnId }
+                              });
+                            } else {
+                              // 单行或批量模式：加入队列
+                              store.dispatch({
+                                type: 'edit/queue',
+                                cell: { rowKey, columnId },
+                                value: nextText
+                              });
+                              store.dispatch({
+                                type: 'edit/commit',
+                                cell: { rowKey, columnId }
+                              });
+                            }
                           }}
                           onCancel={() =>
                             store.dispatch({
@@ -463,23 +501,33 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                             }
                             setError(null);
 
-                            const current = store.getState();
-                            const nextRows = current.data.rows.map(
-                              (r, index) => {
-                                if (index !== row.index) return r;
-                                return {
-                                  ...(r as any),
-                                  [columnId]: rawValue
-                                };
-                              }
-                            );
-                            store.setState({
-                              ...current,
-                              data: {
-                                ...current.data,
-                                rows: nextRows
-                              }
-                            });
+                            if (editMode === 'immediate') {
+                              // 即时提交模式：立即更新数据
+                              const current = store.getState();
+                              const nextRows = current.data.rows.map(
+                                (r, index) => {
+                                  if (index !== row.index) return r;
+                                  return {
+                                    ...(r as any),
+                                    [columnId]: rawValue
+                                  };
+                                }
+                              );
+                              store.setState({
+                                ...current,
+                                data: {
+                                  ...current.data,
+                                  rows: nextRows
+                                }
+                              });
+                            } else {
+                              // 单行或批量模式：加入队列
+                              store.dispatch({
+                                type: 'edit/queue',
+                                cell: { rowKey, columnId },
+                                value: rawValue
+                              });
+                            }
                           }}
                         />
                       );
@@ -514,6 +562,15 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
           </tbody>
         </table>
       </div>
+      {editMode !== 'immediate' && onSubmit && (
+        <div className='mt-4 px-4 pb-4'>
+          <SubmissionControls
+            store={store}
+            columns={columns}
+            onSubmit={onSubmit}
+          />
+        </div>
+      )}
     </div>
   );
 }
