@@ -7,11 +7,12 @@ export interface CheckboxCellProps {
   value: unknown;
   meta?: ColumnMeta<any, any>;
   error?: string;
+  isModified?: boolean;
   onToggle: (next: boolean) => void;
 }
 
 export function CheckboxCell(props: CheckboxCellProps) {
-  const { value, error, onToggle } = props;
+  const { value, error, isModified = false, onToggle } = props;
   const checked = Boolean(value);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -22,7 +23,10 @@ export function CheckboxCell(props: CheckboxCellProps) {
   };
 
   return (
-    <td className='mt-grid-td px-3 py-2 align-middle' title={error}>
+    <td
+      className={`mt-grid-td px-3 py-2 align-middle ${isModified ? 'bg-blue-100 dark:bg-blue-900/30' : ''}`}
+      title={error || (isModified ? '已修改，等待提交' : undefined)}
+    >
       <div
         role='checkbox'
         aria-checked={checked}

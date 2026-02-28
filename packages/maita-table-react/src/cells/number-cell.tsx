@@ -9,6 +9,7 @@ export interface NumberCellProps {
   meta?: ColumnMeta<any, any>;
   isEditing: boolean;
   error?: string;
+  isModified?: boolean;
   onStartEdit: () => void;
   onChangeDraft: (next: string) => void;
   onCommit: (next: number | null) => void;
@@ -56,6 +57,7 @@ export function NumberCell(props: NumberCellProps) {
     meta,
     isEditing,
     error,
+    isModified = false,
     onStartEdit,
     onChangeDraft,
     onCommit,
@@ -76,6 +78,8 @@ export function NumberCell(props: NumberCellProps) {
         : 'text-left';
 
   const baseClasses = `mt-grid-td px-3 py-2 align-middle whitespace-nowrap ${alignClass}`;
+  const modifiedClasses =
+    isModified && !isEditing ? 'bg-blue-100 dark:bg-blue-900/30' : '';
 
   // 条件着色
   let colorClass = '';
@@ -87,8 +91,13 @@ export function NumberCell(props: NumberCellProps) {
     }
   }
 
-  const effectiveDraft =
-    draftValue == null ? String(value ?? '') : String(draftValue);
+  // 在非编辑状态下，优先使用 value（可能包含待提交的修改值）
+  // 在编辑状态下，优先使用 draftValue（当前正在编辑的值）
+  const effectiveDraft = isEditing
+    ? draftValue == null
+      ? String(value ?? '')
+      : String(draftValue)
+    : String(value ?? '');
 
   const displayText = formatNumberDisplay(numericValue, meta);
 
@@ -151,7 +160,7 @@ export function NumberCell(props: NumberCellProps) {
       <td
         className={`${baseClasses} ${colorClass} ${
           error ? 'text-destructive' : ''
-        }`}
+        } ${modifiedClasses}`}
         onClick={(e) => {
           e.stopPropagation();
           onStartEdit();
@@ -160,7 +169,7 @@ export function NumberCell(props: NumberCellProps) {
           e.stopPropagation();
           onStartEdit();
         }}
-        title={error}
+        title={error || (isModified ? '已修改，等待提交' : undefined)}
       >
         {displayText}
       </td>

@@ -34,9 +34,26 @@ export function createColumnSchema<Row, Value>(
         schema = (schema as z.ZodString).min(1) as z.ZodType<Value>;
       }
       break;
-    case 'boolean':
-      schema = z.boolean() as z.ZodType<Value>;
+    case 'boolean': {
+      // 对于带 trueValue/falseValue 的布尔列，既允许 boolean，也允许底层字符串值
+      const hasMappedValues =
+        meta &&
+        (meta as any).trueValue !== undefined &&
+        (meta as any).falseValue !== undefined;
+
+      if (hasMappedValues) {
+        const trueValue = (meta as any).trueValue as string;
+        const falseValue = (meta as any).falseValue as string;
+        schema = z.union([
+          z.boolean(),
+          z.literal(trueValue),
+          z.literal(falseValue)
+        ]) as unknown as z.ZodType<Value>;
+      } else {
+        schema = z.boolean() as z.ZodType<Value>;
+      }
       break;
+    }
     case 'date':
     case 'datetime':
       schema = z.date() as z.ZodType<Value>;

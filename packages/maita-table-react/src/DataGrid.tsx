@@ -28,6 +28,8 @@ export interface DataGridProps<Row> {
   initialViewState?: Partial<DataGridViewState<Row>>;
   editMode?: EditMode;
   onSubmit?: (edits: Array<{ rowKey: string; row: Row }>) => Promise<void>;
+  onValidationError?: (errors: Record<string, string>) => void;
+  onSubmissionError?: (error: Error) => void;
 }
 
 export function DataGrid<Row>(props: DataGridProps<Row>) {
@@ -35,7 +37,9 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
     columns,
     estimateRowHeight = 36,
     editMode = 'immediate',
-    onSubmit
+    onSubmit,
+    onValidationError,
+    onSubmissionError
   } = props;
   const { state, store } = useDataGrid<Row>(props);
 
@@ -225,6 +229,28 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                       state.runtime.editingCell.rowKey === rowKey &&
                       state.runtime.editingCell.columnId === columnId;
 
+                    // 检查是否有待提交的编辑（用于单行/批量模式）
+                    const pendingEdit = state.runtime.pendingEdits.find(
+                      (e) => e.rowKey === String(rowKey)
+                    );
+                    const hasPendingEdit =
+                      pendingEdit?.editedRow &&
+                      Object.prototype.hasOwnProperty.call(
+                        pendingEdit.editedRow,
+                        columnId
+                      );
+                    const pendingValue = hasPendingEdit
+                      ? (pendingEdit.editedRow as any)[columnId]
+                      : undefined;
+                    // 如果有待提交的编辑值，使用它；否则使用原始值或草稿值
+                    // 注意：对于数字类型，保持原始值；对于文本类型，使用字符串值
+                    const displayValue =
+                      hasPendingEdit && !isEditing
+                        ? pendingValue
+                        : draftValue !== undefined
+                          ? draftValue
+                          : cellValue;
+
                     const error = state.runtime.validationErrors[cellKey];
 
                     const validateBeforeCommit = (
@@ -269,11 +295,12 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                       return (
                         <NumberCell
                           key={cell.id}
-                          value={cellValue}
+                          value={displayValue}
                           draftValue={draftValue}
                           meta={meta}
                           isEditing={!!meta?.editable && isEditing}
                           error={error}
+                          isModified={hasPendingEdit}
                           onMoveFocus={(direction) => {
                             const target = findNextEditableCellIndex(
                               direction,
@@ -334,6 +361,7 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                             const msg = validateBeforeCommit(nextNumber);
                             if (msg) {
                               setError(msg);
+                              // 验证失败时，保持编辑状态，不提交
                               return;
                             }
                             setError(null);
@@ -363,7 +391,7 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                                 cell: { rowKey, columnId }
                               });
                             } else {
-                              // 单行或批量模式：加入队列
+                              // 单行或批量模式：先加入队列，再提交编辑状态
                               store.dispatch({
                                 type: 'edit/queue',
                                 cell: { rowKey, columnId },
@@ -389,11 +417,12 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                       return (
                         <TextCell
                           key={cell.id}
-                          value={cellValue}
+                          value={displayValue}
                           draftValue={draftValue}
                           meta={meta}
                           isEditing={!!meta?.editable && isEditing}
                           error={error}
+                          isModified={hasPendingEdit}
                           onStartEdit={() => {
                             if (!meta?.editable) return;
                             // 如果当前有其他单元格正在编辑，先取消它
@@ -431,6 +460,7 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                             const msg = validateBeforeCommit(nextText);
                             if (msg) {
                               setError(msg);
+                              // 验证失败时，保持编辑状态，不提交
                               return;
                             }
                             setError(null);
@@ -459,7 +489,7 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                                 cell: { rowKey, columnId }
                               });
                             } else {
-                              // 单行或批量模式：加入队列
+                              // 单行或批量模式：先加入队列，再提交编辑状态
                               store.dispatch({
                                 type: 'edit/queue',
                                 cell: { rowKey, columnId },
@@ -505,12 +535,32 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                     }
 
                     if (isBooleanLike) {
+                      // 检查是否有待提交的编辑（用于单行/批量模式）
+                      const pendingEditForCheckbox =
+                        state.runtime.pendingEdits.find(
+                          (e) => e.rowKey === String(rowKey)
+                        );
+                      const hasPendingEditForCheckbox =
+                        pendingEditForCheckbox?.editedRow &&
+                        Object.prototype.hasOwnProperty.call(
+                          pendingEditForCheckbox.editedRow,
+                          columnId
+                        );
+                      const pendingValueForCheckbox = hasPendingEditForCheckbox
+                        ? (pendingEditForCheckbox.editedRow as any)[columnId]
+                        : undefined;
+                      const displayValueForCheckbox =
+                        hasPendingEditForCheckbox && !isEditing
+                          ? pendingValueForCheckbox
+                          : cellValue;
+
                       return (
                         <CheckboxCell
                           key={cell.id}
-                          value={cellValue}
+                          value={displayValueForCheckbox}
                           meta={meta}
                           error={error}
+                          isModified={hasPendingEditForCheckbox}
                           onToggle={(nextBool) => {
                             const rawValue =
                               meta && (meta as any).trueValue !== undefined
@@ -593,6 +643,8 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
             store={store}
             columns={columns}
             onSubmit={onSubmit}
+            onValidationError={onValidationError}
+            onSubmissionError={onSubmissionError}
           />
         </div>
       )}

@@ -203,40 +203,6 @@ export function createDefaultController<Row = any>(): DataGridController<Row> {
           const cell = event.cell;
           if (!cell) return state;
 
-          // 限制队列大小（最大 1000 条）
-          const MAX_QUEUE_SIZE = 1000;
-          if (state.runtime.pendingEdits.length >= MAX_QUEUE_SIZE) {
-            // 如果队列已满，移除最旧的编辑（FIFO）
-            const newPendingEdits = state.runtime.pendingEdits.slice(1);
-            // 继续处理新的编辑
-            const cell = event.cell;
-            if (!cell) return state;
-            const rowIndex = state.data.rows.findIndex(
-              (r, i) =>
-                String(i) === String(cell.rowKey) ||
-                (r as any).id === cell.rowKey
-            );
-            if (rowIndex === -1) return state;
-            const row = state.data.rows[rowIndex] as Row;
-            const editedRow: Partial<Row> = {
-              [cell.columnId]: event.value
-            };
-            const pendingEdit = {
-              rowKey: String(cell.rowKey),
-              rowIndex,
-              originalRow: row,
-              editedRow,
-              timestamp: Date.now()
-            };
-            return {
-              ...state,
-              runtime: {
-                ...state.runtime,
-                pendingEdits: [...newPendingEdits, pendingEdit]
-              }
-            };
-          }
-
           // 查找对应的行
           const rowIndex = state.data.rows.findIndex(
             (r, i) =>

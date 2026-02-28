@@ -17,14 +17,34 @@ export function useTableSubmission<Row>(
 ) {
   const { store, columns, onSubmit, validateRow } = options;
   const rowSchema = createRowSchema(columns);
-
   const validateSingleRow = useCallback(
     async (
       rowKey: string,
       editedRow: Partial<Row>,
       originalRow: Row
     ): Promise<{ success: boolean; errors?: Record<string, string> }> => {
-      const mergedRow = { ...originalRow, ...editedRow };
+      // 转换数据类型以匹配 schema
+      // 对于有 trueValue/falseValue 的 boolean 列，需要将字符串值转换回 boolean
+      const normalizedEditedRow: Partial<Row> = { ...editedRow };
+      columns.forEach((col) => {
+        const meta = col.meta;
+        if (
+          meta?.type === 'boolean' &&
+          meta.editable &&
+          (meta as any).trueValue !== undefined &&
+          (meta as any).falseValue !== undefined &&
+          Object.prototype.hasOwnProperty.call(normalizedEditedRow, col.id)
+        ) {
+          const value = (normalizedEditedRow as any)[col.id];
+          // 如果值是字符串（trueValue/falseValue），转换为 boolean
+          if (typeof value === 'string') {
+            (normalizedEditedRow as any)[col.id] =
+              value === (meta as any).trueValue;
+          }
+        }
+      });
+
+      const mergedRow = { ...originalRow, ...normalizedEditedRow };
 
       // Zod 验证
       const zodResult = rowSchema.safeParse(mergedRow);
@@ -32,7 +52,10 @@ export function useTableSubmission<Row>(
         const errors: Record<string, string> = {};
         zodResult.error.issues.forEach((err) => {
           if (err.path.length > 0) {
-            errors[err.path[0] as string] = err.message;
+            const fieldName = err.path[0] as string;
+            const column = columns.find((c) => c.id === fieldName);
+            const fieldLabel = column?.header || fieldName;
+            errors[fieldName] = `${fieldLabel}: ${err.message}`;
           }
         });
         return { success: false, errors };
@@ -89,9 +112,31 @@ export function useTableSubmission<Row>(
       });
 
       try {
+        // 转换数据类型以匹配 schema
+        const normalizedEditedRow: Partial<Row> = {
+          ...pendingEdit.editedRow
+        };
+        columns.forEach((col) => {
+          const meta = col.meta;
+          if (
+            meta?.type === 'boolean' &&
+            meta.editable &&
+            (meta as any).trueValue !== undefined &&
+            (meta as any).falseValue !== undefined &&
+            Object.prototype.hasOwnProperty.call(normalizedEditedRow, col.id)
+          ) {
+            const value = (normalizedEditedRow as any)[col.id];
+            // 如果值是字符串（trueValue/falseValue），转换为 boolean
+            if (typeof value === 'string') {
+              (normalizedEditedRow as any)[col.id] =
+                value === (meta as any).trueValue;
+            }
+          }
+        });
+
         const mergedRow = {
           ...pendingEdit.originalRow,
-          ...pendingEdit.editedRow
+          ...normalizedEditedRow
         } as Row;
 
         await onSubmit([{ rowKey, row: mergedRow }]);
@@ -148,7 +193,7 @@ export function useTableSubmission<Row>(
         }
       });
 
-      // 如果有验证错误，停止提交
+      // 如果有验证错误，停止提交并抛出错误
       if (
         Object.keys(allErrors).length > 0 ||
         Object.keys(rowErrors).length > 0
@@ -160,6 +205,15 @@ export function useTableSubmission<Row>(
             rowValidationErrors: rowErrors
           }
         });
+        // 抛出验证错误，让调用者可以处理
+        const errorMessages = Object.values(allErrors);
+        if (errorMessages.length > 0) {
+          throw new Error(
+            `验证失败: ${errorMessages.slice(0, 3).join('; ')}${
+              errorMessages.length > 3 ? '...' : ''
+            }`
+          );
+        }
         return;
       }
 
@@ -171,10 +225,31 @@ export function useTableSubmission<Row>(
       });
 
       try {
-        const submitData = editsToSubmit.map((edit) => ({
-          rowKey: edit.rowKey,
-          row: { ...edit.originalRow, ...edit.editedRow } as Row
-        }));
+        // 转换数据类型以匹配 schema
+        const submitData = editsToSubmit.map((edit) => {
+          const normalizedEditedRow: Partial<Row> = { ...edit.editedRow };
+          columns.forEach((col) => {
+            const meta = col.meta;
+            if (
+              meta?.type === 'boolean' &&
+              meta.editable &&
+              (meta as any).trueValue !== undefined &&
+              (meta as any).falseValue !== undefined &&
+              Object.prototype.hasOwnProperty.call(normalizedEditedRow, col.id)
+            ) {
+              const value = (normalizedEditedRow as any)[col.id];
+              // 如果值是字符串（trueValue/falseValue），转换为 boolean
+              if (typeof value === 'string') {
+                (normalizedEditedRow as any)[col.id] =
+                  value === (meta as any).trueValue;
+              }
+            }
+          });
+          return {
+            rowKey: edit.rowKey,
+            row: { ...edit.originalRow, ...normalizedEditedRow } as Row
+          };
+        });
 
         await onSubmit(submitData);
 

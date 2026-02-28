@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 type DemoRow = {
   id: number;
@@ -120,10 +121,10 @@ export default function Page() {
 
       const result = await response.json();
       console.log('提交成功:', result);
-      // 可以在这里显示成功提示
+      toast.success(`成功提交 ${edits.length} 行数据`);
     } catch (error) {
       console.error('提交错误:', error);
-      // 可以在这里显示错误提示
+      toast.error(`提交失败: ${(error as Error).message || '未知错误'}`);
       throw error;
     }
   };
@@ -166,6 +167,22 @@ export default function Page() {
         initialViewState={{ pageSize: 10000 }}
         editMode={editMode}
         onSubmit={editMode !== 'immediate' ? handleSubmit : undefined}
+        onValidationError={(errors) => {
+          const errorMessages = Object.values(errors);
+          if (errorMessages.length > 0) {
+            toast.error(
+              `验证失败: ${errorMessages.slice(0, 3).join('; ')}${
+                errorMessages.length > 3 ? '...' : ''
+              }`,
+              {
+                id: 'maita-table-validation'
+              }
+            );
+          }
+        }}
+        onSubmissionError={(error) => {
+          toast.error(`提交失败: ${error.message || '未知错误'}`);
+        }}
       />
     </div>
   );

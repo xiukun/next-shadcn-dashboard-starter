@@ -9,6 +9,7 @@ export interface TextCellProps {
   meta?: ColumnMeta<any, any>;
   isEditing: boolean;
   error?: string;
+  isModified?: boolean;
   onStartEdit: () => void;
   onChangeDraft: (next: string) => void;
   onCommit: (next: string | null) => void;
@@ -23,6 +24,7 @@ export function TextCell(props: TextCellProps) {
     meta,
     isEditing,
     error,
+    isModified = false,
     onStartEdit,
     onChangeDraft,
     onCommit,
@@ -39,9 +41,16 @@ export function TextCell(props: TextCellProps) {
 
   const baseClasses = `mt-grid-td px-3 py-2 align-middle whitespace-nowrap ${alignClass}`;
   const errorClasses = error ? 'border-destructive text-destructive' : '';
+  const modifiedClasses =
+    isModified && !isEditing ? 'bg-blue-100 dark:bg-blue-900/30' : '';
 
-  const effectiveDraft =
-    draftValue == null ? String(value ?? '') : String(draftValue ?? '');
+  // 在非编辑状态下，优先使用 value（可能包含待提交的修改值）
+  // 在编辑状态下，优先使用 draftValue（当前正在编辑的值）
+  const effectiveDraft = isEditing
+    ? draftValue == null
+      ? String(value ?? '')
+      : String(draftValue ?? '')
+    : String(value ?? '');
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Tab') {
@@ -66,7 +75,7 @@ export function TextCell(props: TextCellProps) {
   if (!isEditing) {
     return (
       <td
-        className={`${baseClasses} ${error ? 'text-destructive' : ''}`}
+        className={`${baseClasses} ${error ? 'text-destructive' : ''} ${modifiedClasses}`}
         onClick={(e) => {
           e.stopPropagation();
           onStartEdit();
@@ -75,7 +84,7 @@ export function TextCell(props: TextCellProps) {
           e.stopPropagation();
           onStartEdit();
         }}
-        title={error}
+        title={error || (isModified ? '已修改，等待提交' : undefined)}
       >
         {effectiveDraft}
       </td>
