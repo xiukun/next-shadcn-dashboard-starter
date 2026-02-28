@@ -1,0 +1,213 @@
+import { useCallback } from 'react';
+import type { ReactDataGridStore } from '../store';
+import type { ColumnConfig } from '@maita-table/core';
+import { createRowSchema } from '@maita-table/core';
+
+export interface UseTableSubmissionOptions<Row> {
+  store: ReactDataGridStore<Row>;
+  columns: ColumnConfig<Row>[];
+  onSubmit: (edits: Array<{ rowKey: string; row: Row }>) => Promise<void>;
+  validateRow?: (
+    row: Row
+  ) => Promise<{ success: boolean; errors?: Record<string, string> }>;
+}
+
+export function useTableSubmission<Row>(
+  options: UseTableSubmissionOptions<Row>
+) {
+  const { store, columns, onSubmit, validateRow } = options;
+  const rowSchema = createRowSchema(columns);
+
+  const validateSingleRow = useCallback(
+    async (
+      rowKey: string,
+      editedRow: Partial<Row>,
+      originalRow: Row
+    ): Promise<{ success: boolean; errors?: Record<string, string> }> => {
+      const mergedRow = { ...originalRow, ...editedRow };
+
+      // Zod 验证
+      const zodResult = rowSchema.safeParse(mergedRow);
+      if (!zodResult.success) {
+        const errors: Record<string, string> = {};
+        zodResult.error.issues.forEach((err) => {
+          if (err.path.length > 0) {
+            errors[err.path[0] as string] = err.message;
+          }
+        });
+        return { success: false, errors };
+      }
+
+      // 自定义验证
+      if (validateRow) {
+        const customResult = await validateRow(mergedRow);
+        if (!customResult.success) {
+          return customResult;
+        }
+      }
+
+      return { success: true };
+    },
+    [rowSchema, validateRow]
+  );
+
+  const submitRow = useCallback(
+    async (rowKey: string) => {
+      const state = store.getState();
+      const pendingEdit = state.runtime.pendingEdits.find(
+        (e) => e.rowKey === rowKey
+      );
+
+      if (!pendingEdit) return;
+
+      // 验证
+      const validation = await validateSingleRow(
+        rowKey,
+        pendingEdit.editedRow,
+        pendingEdit.originalRow
+      );
+
+      if (!validation.success) {
+        // 设置验证错误
+        store.dispatch({
+          type: 'runtime/patch',
+          patch: {
+            validationErrors: validation.errors || {},
+            rowValidationErrors: {
+              ...state.runtime.rowValidationErrors,
+              [rowKey]: []
+            }
+          }
+        });
+        return;
+      }
+
+      // 开始提交
+      store.dispatch({
+        type: 'submission/start',
+        rowKeys: [rowKey]
+      });
+
+      try {
+        const mergedRow = {
+          ...pendingEdit.originalRow,
+          ...pendingEdit.editedRow
+        } as Row;
+
+        await onSubmit([{ rowKey, row: mergedRow }]);
+
+        // 提交成功
+        store.dispatch({
+          type: 'submission/success',
+          rowKeys: [rowKey]
+        });
+
+        // 从队列移除
+        store.dispatch({
+          type: 'edit/removeFromQueue',
+          rowKey
+        });
+      } catch (error) {
+        store.dispatch({
+          type: 'submission/error',
+          rowKeys: [rowKey],
+          errors: [{ rowKey, error: (error as Error).message }]
+        });
+      }
+    },
+    [store, validateSingleRow, onSubmit]
+  );
+
+  const submitBatch = useCallback(
+    async (rowKeys?: string[]) => {
+      const state = store.getState();
+      const editsToSubmit = rowKeys
+        ? state.runtime.pendingEdits.filter((e) => rowKeys.includes(e.rowKey))
+        : state.runtime.pendingEdits;
+
+      if (editsToSubmit.length === 0) return;
+
+      // 批量验证
+      const validations = await Promise.all(
+        editsToSubmit.map((edit) =>
+          validateSingleRow(edit.rowKey, edit.editedRow, edit.originalRow)
+        )
+      );
+
+      // 收集验证错误
+      const allErrors: Record<string, string> = {};
+      const rowErrors: Record<string, string[]> = {};
+
+      validations.forEach((validation, index) => {
+        if (!validation.success) {
+          const edit = editsToSubmit[index];
+          Object.assign(allErrors, validation.errors || {});
+          if (validation.errors) {
+            rowErrors[edit.rowKey] = Object.values(validation.errors);
+          }
+        }
+      });
+
+      // 如果有验证错误，停止提交
+      if (
+        Object.keys(allErrors).length > 0 ||
+        Object.keys(rowErrors).length > 0
+      ) {
+        store.dispatch({
+          type: 'runtime/patch',
+          patch: {
+            validationErrors: allErrors,
+            rowValidationErrors: rowErrors
+          }
+        });
+        return;
+      }
+
+      // 开始提交
+      const keysToSubmit = editsToSubmit.map((e) => e.rowKey);
+      store.dispatch({
+        type: 'submission/start',
+        rowKeys: keysToSubmit
+      });
+
+      try {
+        const submitData = editsToSubmit.map((edit) => ({
+          rowKey: edit.rowKey,
+          row: { ...edit.originalRow, ...edit.editedRow } as Row
+        }));
+
+        await onSubmit(submitData);
+
+        // 提交成功
+        store.dispatch({
+          type: 'submission/success',
+          rowKeys: keysToSubmit
+        });
+
+        // 从队列移除
+        keysToSubmit.forEach((rowKey) => {
+          store.dispatch({
+            type: 'edit/removeFromQueue',
+            rowKey
+          });
+        });
+      } catch (error) {
+        store.dispatch({
+          type: 'submission/error',
+          rowKeys: keysToSubmit,
+          errors: keysToSubmit.map((rowKey) => ({
+            rowKey,
+            error: (error as Error).message
+          }))
+        });
+      }
+    },
+    [store, validateSingleRow, onSubmit]
+  );
+
+  return {
+    submitRow,
+    submitBatch,
+    validateSingleRow
+  };
+}

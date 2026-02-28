@@ -29,6 +29,10 @@ export function createColumnSchema<Row, Value>(
       break;
     case 'string':
       schema = z.string() as z.ZodType<Value>;
+      // 如果 required 为 true，确保非空字符串
+      if (meta?.required === true) {
+        schema = (schema as z.ZodString).min(1) as z.ZodType<Value>;
+      }
       break;
     case 'boolean':
       schema = z.boolean() as z.ZodType<Value>;
