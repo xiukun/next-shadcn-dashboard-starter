@@ -6,7 +6,8 @@
     "name": "名称",
     "price": "价格",
     "change": "变化率",
-    "status": "状态"
+    "status": "状态",
+    "extra": "扩展列 {index}"
   },
   "errors": {
     "nameRequired": "名称不能为空",

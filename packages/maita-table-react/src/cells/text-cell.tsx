@@ -15,6 +15,7 @@ export interface TextCellProps {
   onCommit: (next: string | null) => void;
   onCancel: () => void;
   onMoveFocus?: (direction: 'next' | 'prev') => void;
+  style?: React.CSSProperties;
 }
 
 export function TextCell(props: TextCellProps) {
@@ -29,7 +30,8 @@ export function TextCell(props: TextCellProps) {
     onChangeDraft,
     onCommit,
     onCancel,
-    onMoveFocus
+    onMoveFocus,
+    style
   } = props;
 
   const alignClass =
@@ -76,6 +78,7 @@ export function TextCell(props: TextCellProps) {
     return (
       <td
         className={`${baseClasses} ${error ? 'text-destructive' : ''} ${modifiedClasses}`}
+        style={style}
         onClick={(e) => {
           e.stopPropagation();
           onStartEdit();
@@ -95,7 +98,7 @@ export function TextCell(props: TextCellProps) {
     typeof meta?.maxLength === 'number' ? meta.maxLength : undefined;
 
   return (
-    <td className={baseClasses}>
+    <td className={baseClasses} style={style}>
       <input
         className={`bg-background focus-visible:ring-ring h-7 w-64 max-w-full rounded border px-2 text-sm outline-none focus-visible:ring-2 ${
           errorClasses || 'border-input'

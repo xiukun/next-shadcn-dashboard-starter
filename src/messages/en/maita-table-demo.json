@@ -6,7 +6,8 @@
     "name": "Name",
     "price": "Price",
     "change": "Change",
-    "status": "Status"
+    "status": "Status",
+    "extra": "Extra {index}"
   },
   "errors": {
     "nameRequired": "Name is required",

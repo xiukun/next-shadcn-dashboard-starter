@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { z } from 'zod';
-import { DataGrid, type EditMode } from '@maita-table/react';
+import dynamic from 'next/dynamic';
+import type { EditMode } from '@maita-table/react';
 import { createNextDataSource } from '@maita-table/next';
 import type { ColumnConfig } from '@maita-table/core';
 import { useTranslations } from 'next-intl';
@@ -26,11 +27,23 @@ type DemoRow = {
 
 const dataSource = createNextDataSource<DemoRow>('/api/maita-table-demo');
 
+// DataGrid 仅在客户端渲染，避免在 SSR 阶段引入虚拟化/DOM 相关逻辑导致水合差异
+const DataGrid = dynamic(
+  async () => {
+    const mod = await import('@maita-table/react');
+    return mod.DataGrid as typeof mod.DataGrid;
+  },
+  {
+    ssr: false
+  }
+);
+
 export default function Page() {
   const t = useTranslations('maita-table-demo');
   const [editMode, setEditMode] = useState<EditMode>('immediate');
 
-  const columns: ColumnConfig<DemoRow>[] = [
+  // 基础 5 列
+  const baseColumns: ColumnConfig<DemoRow>[] = [
     {
       id: 'id',
       header: t('columns.id'),
@@ -105,6 +118,24 @@ export default function Page() {
     }
   ];
 
+  // 额外派生列，用于压测列虚拟化（共 40 列：5 基础 + 35 扩展）
+  const extraColumns: ColumnConfig<DemoRow>[] = Array.from(
+    { length: 35 },
+    (_, index) => {
+      const i = index + 1;
+      return {
+        id: `extra_${i}`,
+        header: t('columns.extra', { index: i }),
+        accessor: (row) => `${row.name} #${i}`,
+        meta: {
+          type: 'string'
+        }
+      };
+    }
+  );
+
+  const columns: ColumnConfig<DemoRow>[] = [...baseColumns, ...extraColumns];
+
   const handleSubmit = async (
     edits: Array<{ rowKey: string; row: DemoRow }>
   ) => {
@@ -164,7 +195,13 @@ export default function Page() {
         id='maita-table-demo'
         columns={columns}
         dataSource={dataSource}
-        initialViewState={{ pageSize: 10000 }}
+        initialViewState={{
+          pageSize: 10000,
+          // 默认将 ID 列固定在左侧，避免滚动时丢失
+          columnsPinned: { id: 'left' }
+        }}
+        // 在列表头显示竖向分隔线，便于感知列边界和调整手柄
+        showHeaderVerticalDividers
         editMode={editMode}
         onSubmit={editMode !== 'immediate' ? handleSubmit : undefined}
         onValidationError={(errors) => {

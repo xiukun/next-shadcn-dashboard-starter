@@ -41,6 +41,22 @@ export interface DataGridViewState<Row = any> {
   pageIndex: number;
   pageSize: number;
   density: 'comfortable' | 'compact';
+  /**
+   * 列顺序（覆盖 columns 的顺序）
+   */
+  columnsOrder?: string[];
+  /**
+   * 列宽度映射（columnId -> width）
+   */
+  columnsWidth?: Record<string, number>;
+  /**
+   * 列可见性映射（columnId -> visible）
+   */
+  columnsVisibility?: Record<string, boolean>;
+  /**
+   * 列固定位置映射（columnId -> 'left' | 'right'）
+   */
+  columnsPinned?: Record<string, 'left' | 'right'>;
 }
 
 export interface DataGridRuntimeState<Row = any> {

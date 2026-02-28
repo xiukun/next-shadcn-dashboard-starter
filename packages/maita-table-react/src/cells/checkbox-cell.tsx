@@ -9,10 +9,11 @@ export interface CheckboxCellProps {
   error?: string | null;
   isModified?: boolean;
   onToggle: (next: boolean) => void;
+  style?: React.CSSProperties;
 }
 
 export function CheckboxCell(props: CheckboxCellProps) {
-  const { value, error, isModified = false, onToggle } = props;
+  const { value, error, isModified = false, onToggle, style } = props;
   const checked = Boolean(value);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -25,6 +26,7 @@ export function CheckboxCell(props: CheckboxCellProps) {
   return (
     <td
       className={`mt-grid-td px-3 py-2 align-middle ${isModified ? 'bg-blue-100 dark:bg-blue-900/30' : ''}`}
+      style={style}
       title={error || (isModified ? '已修改，等待提交' : undefined)}
     >
       <div

@@ -15,6 +15,7 @@ export interface NumberCellProps {
   onCommit: (next: number | null) => void;
   onCancel: () => void;
   onMoveFocus?: (direction: 'next' | 'prev') => void;
+  style?: React.CSSProperties;
 }
 
 function formatNumberDisplay(
@@ -62,7 +63,8 @@ export function NumberCell(props: NumberCellProps) {
     onChangeDraft,
     onCommit,
     onCancel,
-    onMoveFocus
+    onMoveFocus,
+    style
   } = props;
 
   const numericValue =
@@ -161,6 +163,7 @@ export function NumberCell(props: NumberCellProps) {
         className={`${baseClasses} ${colorClass} ${
           error ? 'text-destructive' : ''
         } ${modifiedClasses}`}
+        style={style}
         onClick={(e) => {
           e.stopPropagation();
           onStartEdit();
@@ -177,7 +180,7 @@ export function NumberCell(props: NumberCellProps) {
   }
 
   return (
-    <td className={baseClasses}>
+    <td className={baseClasses} style={style}>
       <input
         className={`bg-background focus-visible:ring-ring h-7 w-24 rounded border px-2 text-sm outline-none focus-visible:ring-2 ${
           error ? 'border-destructive text-destructive' : 'border-input'
