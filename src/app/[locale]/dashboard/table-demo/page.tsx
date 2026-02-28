@@ -1,9 +1,18 @@
 'use client';
 
-import { DataGrid } from '@maita-table/react';
+import { useState } from 'react';
+import { DataGrid, type EditMode } from '@maita-table/react';
 import { createNextDataSource } from '@maita-table/next';
 import type { ColumnConfig } from '@maita-table/core';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 
 type DemoRow = {
   id: number;
@@ -17,6 +26,7 @@ const dataSource = createNextDataSource<DemoRow>('/api/maita-table-demo');
 
 export default function Page() {
   const t = useTranslations('maita-table-demo');
+  const [editMode, setEditMode] = useState<EditMode>('immediate');
 
   const columns: ColumnConfig<DemoRow>[] = [
     {
@@ -94,6 +104,30 @@ export default function Page() {
     }
   ];
 
+  const handleSubmit = async (
+    edits: Array<{ rowKey: string; row: DemoRow }>
+  ) => {
+    try {
+      const response = await fetch('/api/maita-table-demo/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ edits })
+      });
+
+      if (!response.ok) {
+        throw new Error('提交失败');
+      }
+
+      const result = await response.json();
+      console.log('提交成功:', result);
+      // 可以在这里显示成功提示
+    } catch (error) {
+      console.error('提交错误:', error);
+      // 可以在这里显示错误提示
+      throw error;
+    }
+  };
+
   return (
     <div className='space-y-4 p-6'>
       <div className='space-y-1'>
@@ -101,11 +135,37 @@ export default function Page() {
         <p className='text-muted-foreground text-sm'>{t('description')}</p>
       </div>
 
+      <div className='flex items-center gap-4'>
+        <div className='flex items-center gap-2'>
+          <label className='text-sm font-medium'>编辑模式:</label>
+          <Select
+            value={editMode}
+            onValueChange={(value) => setEditMode(value as EditMode)}
+          >
+            <SelectTrigger className='w-[180px]'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='immediate'>即时提交</SelectItem>
+              <SelectItem value='single-row'>单行提交</SelectItem>
+              <SelectItem value='batch'>批量提交</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {editMode !== 'immediate' && (
+          <p className='text-muted-foreground text-sm'>
+            编辑后点击表格底部的提交按钮保存更改
+          </p>
+        )}
+      </div>
+
       <DataGrid<DemoRow>
         id='maita-table-demo'
         columns={columns}
         dataSource={dataSource}
         initialViewState={{ pageSize: 10000 }}
+        editMode={editMode}
+        onSubmit={editMode !== 'immediate' ? handleSubmit : undefined}
       />
     </div>
   );
