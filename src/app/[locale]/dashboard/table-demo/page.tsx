@@ -27,7 +27,19 @@ export default function Page() {
     {
       id: 'name',
       header: t('columns.name'),
-      accessor: (row) => row.name
+      accessor: (row) => row.name,
+      meta: {
+        type: 'string',
+        editable: true,
+        editorType: 'text',
+        maxLength: 30,
+        validate: (value: string) => {
+          const v = value?.trim?.() ?? '';
+          if (!v) return t('errors.nameRequired' as any);
+          if (v.length > 10) return t('errors.nameTooLong' as any);
+          return null;
+        }
+      }
     },
     {
       id: 'price',
@@ -71,7 +83,14 @@ export default function Page() {
     {
       id: 'status',
       header: t('columns.status'),
-      accessor: (row) => row.status
+      accessor: (row) => row.status === 'active',
+      meta: {
+        type: 'boolean',
+        editable: true,
+        editorType: 'checkbox',
+        trueValue: 'active',
+        falseValue: 'archived'
+      }
     }
   ];
 

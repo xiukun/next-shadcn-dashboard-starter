@@ -12,6 +12,8 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useDataGrid } from './useDataGrid';
 import { NumberCell } from './cells/number-cell';
+import { TextCell } from './cells/text-cell';
+import { CheckboxCell } from './cells/checkbox-cell';
 
 export interface DataGridProps<Row> {
   id: string;
@@ -68,6 +70,61 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
       ? totalSize - virtualItems[virtualItems.length - 1]!.end
       : 0;
 
+  const findNextEditableCellIndex = (
+    direction: 'next' | 'prev',
+    rowIndex: number,
+    columnIndex: number
+  ): { rowIndex: number; columnIndex: number } | null => {
+    const rowCount = rows.length;
+    const colCount = visibleColumns.length;
+
+    let r = rowIndex;
+    let c = columnIndex;
+
+    // 最多遍历整张表一次，避免死循环
+    for (let steps = 0; steps < rowCount * colCount; steps++) {
+      if (direction === 'next') {
+        c++;
+        if (c >= colCount) {
+          c = 0;
+          r++;
+          if (r >= rowCount) return null;
+        }
+      } else {
+        c--;
+        if (c < 0) {
+          c = colCount - 1;
+          r--;
+          if (r < 0) return null;
+        }
+      }
+
+      const nextColumn = visibleColumns[c];
+      const meta = nextColumn.meta as ColumnMeta<Row> | undefined;
+      if (meta?.editable) {
+        return { rowIndex: r, columnIndex: c };
+      }
+    }
+
+    return null;
+  };
+
+  const handleTbodyClick = (e: React.MouseEvent<HTMLTableSectionElement>) => {
+    // 如果点击的是 tbody 本身（不是单元格），取消当前编辑
+    if (e.target === e.currentTarget) {
+      const current = store.getState();
+      if (current.runtime.editingCell) {
+        store.dispatch({
+          type: 'edit/cancel',
+          cell: {
+            rowKey: current.runtime.editingCell.rowKey,
+            columnId: current.runtime.editingCell.columnId
+          }
+        });
+      }
+    }
+  };
+
   return (
     <div className='mt-grid bg-card rounded-lg border text-sm'>
       <div
@@ -95,7 +152,7 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
               </tr>
             ))}
           </thead>
-          <tbody className='mt-grid-tbody'>
+          <tbody className='mt-grid-tbody' onClick={handleTbodyClick}>
             {paddingTop > 0 && (
               <tr>
                 <td
@@ -112,15 +169,17 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                   className='mt-grid-tr hover:bg-muted/40 border-b transition-colors last:border-b-0'
                   style={{ height: virtualRow.size }}
                 >
-                  {row.getVisibleCells().map((cell) => {
+                  {row.getVisibleCells().map((cell, cellIndex) => {
                     const columnId = cell.column.id;
-                    const meta = cell.column
-                      .columnDef.meta as ColumnMeta<Row> | undefined;
+                    const meta = cell.column.columnDef.meta as
+                      | ColumnMeta<Row>
+                      | undefined;
                     const rowKey = row.id;
                     const cellKey = `${rowKey}:${columnId}`;
                     const drafts = state.runtime.editingDraftValues;
                     const draftValue =
-                      drafts && Object.prototype.hasOwnProperty.call(drafts, cellKey)
+                      drafts &&
+                      Object.prototype.hasOwnProperty.call(drafts, cellKey)
                         ? drafts[cellKey]
                         : undefined;
                     const cellValue = cell.getValue();
@@ -130,8 +189,45 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                       state.runtime.editingCell.rowKey === rowKey &&
                       state.runtime.editingCell.columnId === columnId;
 
+                    const error = state.runtime.validationErrors[cellKey];
+
+                    const validateBeforeCommit = (
+                      next: unknown
+                    ): string | null => {
+                      if (meta?.validate) {
+                        const msg = meta.validate(
+                          next as any,
+                          row.original as any
+                        );
+                        return msg ?? null;
+                      }
+                      return null;
+                    };
+
+                    const setError = (msg: string | null) => {
+                      const current = store.getState();
+                      const nextErrors = {
+                        ...current.runtime.validationErrors
+                      };
+                      if (msg) nextErrors[cellKey] = msg;
+                      else delete nextErrors[cellKey];
+
+                      store.setState({
+                        ...current,
+                        runtime: {
+                          ...current.runtime,
+                          validationErrors: nextErrors
+                        }
+                      });
+                    };
+
                     const isNumberLike =
                       meta?.type === 'number' || meta?.type === 'integer';
+                    const isBooleanLike =
+                      meta?.type === 'boolean' ||
+                      meta?.editorType === 'checkbox';
+                    const isTextLike =
+                      meta?.editorType === 'text' || meta?.type === 'string';
 
                     if (isNumberLike) {
                       return (
@@ -141,31 +237,83 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                           draftValue={draftValue}
                           meta={meta}
                           isEditing={!!meta?.editable && isEditing}
+                          error={error}
+                          onMoveFocus={(direction) => {
+                            const target = findNextEditableCellIndex(
+                              direction,
+                              row.index,
+                              cellIndex
+                            );
+                            if (!target) return;
+                            const targetRow = rows[target.rowIndex];
+                            const targetColumn =
+                              visibleColumns[target.columnIndex];
+                            const targetCell =
+                              targetRow.getVisibleCells()[target.columnIndex];
+                            const targetValue = targetCell.getValue();
+
+                            store.dispatch({
+                              type: 'edit/start',
+                              cell: {
+                                rowKey: targetRow.id,
+                                columnId: targetColumn.id
+                              },
+                              initialValue: targetValue
+                            });
+                          }}
                           onStartEdit={() => {
                             if (!meta?.editable) return;
+                            // 如果当前有其他单元格正在编辑，先取消它
+                            const current = store.getState();
+                            if (
+                              current.runtime.editingCell &&
+                              (current.runtime.editingCell.rowKey !== rowKey ||
+                                current.runtime.editingCell.columnId !==
+                                  columnId)
+                            ) {
+                              store.dispatch({
+                                type: 'edit/cancel',
+                                cell: {
+                                  rowKey: current.runtime.editingCell.rowKey,
+                                  columnId: current.runtime.editingCell.columnId
+                                }
+                              });
+                            }
                             store.dispatch({
                               type: 'edit/start',
                               cell: { rowKey, columnId },
                               initialValue: cellValue
                             });
                           }}
-                          onChangeDraft={(val) =>
+                          onChangeDraft={(val) => {
                             store.dispatch({
                               type: 'edit/change',
                               cell: { rowKey, columnId },
                               value: val
-                            })
-                          }
-                          onCommit={(nextNumber) => {
-                            const current = store.getState();
-                            const nextRows = current.data.rows.map((r, index) => {
-                              if (index !== row.index) return r;
-                              if (nextNumber == null) return r;
-                              return {
-                                ...(r as any),
-                                [columnId]: nextNumber
-                              };
                             });
+                            // 即时校验：输入过程中如果已通过校验，及时清除错误样式
+                            const msg = validateBeforeCommit(val);
+                            setError(msg);
+                          }}
+                          onCommit={(nextNumber) => {
+                            const msg = validateBeforeCommit(nextNumber);
+                            if (msg) {
+                              setError(msg);
+                              return;
+                            }
+                            setError(null);
+
+                            const current = store.getState();
+                            const nextRows = current.data.rows.map(
+                              (r, index) => {
+                                if (index !== row.index) return r;
+                                if (nextNumber == null) return r;
+                                return {
+                                  ...(r as any),
+                                  [columnId]: nextNumber
+                                };
+                              }
+                            );
                             store.setState({
                               ...current,
                               data: {
@@ -188,10 +336,162 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                       );
                     }
 
+                    if (isTextLike) {
+                      return (
+                        <TextCell
+                          key={cell.id}
+                          value={cellValue}
+                          draftValue={draftValue}
+                          meta={meta}
+                          isEditing={!!meta?.editable && isEditing}
+                          error={error}
+                          onStartEdit={() => {
+                            if (!meta?.editable) return;
+                            // 如果当前有其他单元格正在编辑，先取消它
+                            const current = store.getState();
+                            if (
+                              current.runtime.editingCell &&
+                              (current.runtime.editingCell.rowKey !== rowKey ||
+                                current.runtime.editingCell.columnId !==
+                                  columnId)
+                            ) {
+                              store.dispatch({
+                                type: 'edit/cancel',
+                                cell: {
+                                  rowKey: current.runtime.editingCell.rowKey,
+                                  columnId: current.runtime.editingCell.columnId
+                                }
+                              });
+                            }
+                            store.dispatch({
+                              type: 'edit/start',
+                              cell: { rowKey, columnId },
+                              initialValue: cellValue ?? ''
+                            });
+                          }}
+                          onChangeDraft={(val) => {
+                            store.dispatch({
+                              type: 'edit/change',
+                              cell: { rowKey, columnId },
+                              value: val
+                            });
+                            const msg = validateBeforeCommit(val);
+                            setError(msg);
+                          }}
+                          onCommit={(nextText) => {
+                            const msg = validateBeforeCommit(nextText);
+                            if (msg) {
+                              setError(msg);
+                              return;
+                            }
+                            setError(null);
+
+                            const current = store.getState();
+                            const nextRows = current.data.rows.map(
+                              (r, index) => {
+                                if (index !== row.index) return r;
+                                return {
+                                  ...(r as any),
+                                  [columnId]: nextText
+                                };
+                              }
+                            );
+                            store.setState({
+                              ...current,
+                              data: {
+                                ...current.data,
+                                rows: nextRows
+                              }
+                            });
+                            store.dispatch({
+                              type: 'edit/commit',
+                              cell: { rowKey, columnId }
+                            });
+                          }}
+                          onCancel={() =>
+                            store.dispatch({
+                              type: 'edit/cancel',
+                              cell: { rowKey, columnId }
+                            })
+                          }
+                          onMoveFocus={(direction) => {
+                            const target = findNextEditableCellIndex(
+                              direction,
+                              row.index,
+                              cellIndex
+                            );
+                            if (!target) return;
+                            const targetRow = rows[target.rowIndex];
+                            const targetColumn =
+                              visibleColumns[target.columnIndex];
+                            const targetCell =
+                              targetRow.getVisibleCells()[target.columnIndex];
+                            const targetValue = targetCell.getValue() ?? '';
+
+                            store.dispatch({
+                              type: 'edit/start',
+                              cell: {
+                                rowKey: targetRow.id,
+                                columnId: targetColumn.id
+                              },
+                              initialValue: targetValue
+                            });
+                          }}
+                        />
+                      );
+                    }
+
+                    if (isBooleanLike) {
+                      return (
+                        <CheckboxCell
+                          key={cell.id}
+                          value={cellValue}
+                          meta={meta}
+                          error={error}
+                          onToggle={(nextBool) => {
+                            const rawValue =
+                              meta && (meta as any).trueValue !== undefined
+                                ? nextBool
+                                  ? (meta as any).trueValue
+                                  : (meta as any).falseValue
+                                : nextBool;
+
+                            const msg = validateBeforeCommit(rawValue);
+                            if (msg) {
+                              setError(msg);
+                              return;
+                            }
+                            setError(null);
+
+                            const current = store.getState();
+                            const nextRows = current.data.rows.map(
+                              (r, index) => {
+                                if (index !== row.index) return r;
+                                return {
+                                  ...(r as any),
+                                  [columnId]: rawValue
+                                };
+                              }
+                            );
+                            store.setState({
+                              ...current,
+                              data: {
+                                ...current.data,
+                                rows: nextRows
+                              }
+                            });
+                          }}
+                        />
+                      );
+                    }
+
                     return (
                       <td
                         key={cell.id}
-                        className='mt-grid-td px-3 py-2 align-middle whitespace-nowrap'
+                        className={`mt-grid-td px-3 py-2 align-middle whitespace-nowrap ${
+                          error ? 'text-destructive' : ''
+                        }`}
+                        title={error}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,

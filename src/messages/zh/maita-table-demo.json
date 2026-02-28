@@ -1,12 +1,16 @@
 {
-  "title": "表格性能演示",
-  "description": "基于 @maita-table（TanStack Table + 虚拟化）渲染 10,000 行数据。",
+  "title": "表格性能与内联编辑演示",
+  "description": "基于 @maita-table（TanStack Table + 虚拟化）渲染 10,000 行数据，并演示在名称、价格和状态列上的内联编辑与本地校验。",
   "columns": {
     "id": "ID",
     "name": "名称",
     "price": "价格",
     "change": "变化率",
     "status": "状态"
+  },
+  "errors": {
+    "nameRequired": "名称不能为空",
+    "nameTooLong": "名称长度不能超过 50 个字符"
   }
 }
 

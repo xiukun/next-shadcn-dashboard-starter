@@ -1,12 +1,16 @@
 {
-  "title": "Table Performance Demo",
-  "description": "Render 10,000 rows with @maita-table (TanStack Table + virtualization).",
+  "title": "Table Performance & Inline Editing Demo",
+  "description": "Render 10,000 rows with @maita-table (TanStack Table + virtualization), and showcase inline editing with local validation on name, price and status columns.",
   "columns": {
     "id": "ID",
     "name": "Name",
     "price": "Price",
     "change": "Change",
     "status": "Status"
+  },
+  "errors": {
+    "nameRequired": "Name is required",
+    "nameTooLong": "Name must not exceed 50 characters"
   }
 }
 

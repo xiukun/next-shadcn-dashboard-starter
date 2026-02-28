@@ -1,6 +1,6 @@
 ## 1. 规划与规范
 - [x] 1.1 完成 @maita-table 相关需求梳理与 OpenSpec 变更（proposal 与增量规范）
-- [ ] 1.2 在 `docs/plans/` 下创建实现计划文档，依据 writing-plans skill 记录执行步骤
+- [x] 1.2 在 `docs/plans/` 下创建实现计划文档，依据 writing-plans skill 记录执行步骤
 
 ## 2. 仓库与 monorepo 结构
 - [x] 2.1 在根目录添加或更新 `pnpm-workspace.yaml`，纳入 `packages/*` 与根项目（`.`）
@@ -24,9 +24,9 @@
 ## 6. 集成与示例
 - [x] 6.1 在根项目中选取一个现有列表页（如 table-demo），改造为使用 `@maita-table/react` 的 `DataGrid`
 - [x] 6.2 校验在万行数据模拟场景下（可使用 mock API）表格滚动与交互性能
-- [ ] 6.3 为表格示例页面补充文档（README 或 mdx），说明如何在新项目中引入 `@maita-table/*`
+- [x] 6.3 为表格示例页面补充文档（README 或 mdx），说明如何在新项目中引入 `@maita-table/*`
 
 ## 7. 验证与收尾
 - [x] 7.1 运行全部测试与 lint，确保三大包与 admin 应用构建通过
-- [ ] 7.2 对照 OpenSpec 规范与任务列表进行自查，并准备 Code Review 说明
+- [x] 7.2 对照 OpenSpec 规范与任务列表进行自查，并准备 Code Review 说明
 

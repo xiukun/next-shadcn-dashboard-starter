@@ -8,10 +8,12 @@ export interface NumberCellProps {
   draftValue?: unknown;
   meta?: ColumnMeta<any, any>;
   isEditing: boolean;
+  error?: string;
   onStartEdit: () => void;
   onChangeDraft: (next: string) => void;
   onCommit: (next: number | null) => void;
   onCancel: () => void;
+  onMoveFocus?: (direction: 'next' | 'prev') => void;
 }
 
 function formatNumberDisplay(
@@ -22,7 +24,8 @@ function formatNumberDisplay(
 
   const locale = meta?.locale ?? undefined;
   const useGrouping = meta?.thousandSeparator !== false;
-  const decimals = typeof meta?.decimals === 'number' ? meta.decimals : undefined;
+  const decimals =
+    typeof meta?.decimals === 'number' ? meta.decimals : undefined;
   const style = meta?.formatStyle ?? 'decimal';
 
   const options: Intl.NumberFormatOptions = {
@@ -52,21 +55,25 @@ export function NumberCell(props: NumberCellProps) {
     draftValue,
     meta,
     isEditing,
+    error,
     onStartEdit,
     onChangeDraft,
     onCommit,
-    onCancel
+    onCancel,
+    onMoveFocus
   } = props;
 
   const numericValue =
-    typeof value === 'number' && !Number.isNaN(value) ? (value as number) : null;
+    typeof value === 'number' && !Number.isNaN(value)
+      ? (value as number)
+      : null;
 
   const alignClass =
     meta?.align === 'right'
       ? 'text-right tabular-nums'
       : meta?.align === 'center'
-      ? 'text-center'
-      : 'text-left';
+        ? 'text-center'
+        : 'text-left';
 
   const baseClasses = `mt-grid-td px-3 py-2 align-middle whitespace-nowrap ${alignClass}`;
 
@@ -110,6 +117,15 @@ export function NumberCell(props: NumberCellProps) {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Tab') {
+      event.preventDefault();
+      onCancel();
+      if (onMoveFocus) {
+        onMoveFocus(event.shiftKey ? 'prev' : 'next');
+      }
+      return;
+    }
+
     if (event.key === 'ArrowUp') {
       event.preventDefault();
       applyStep(1);
@@ -133,9 +149,18 @@ export function NumberCell(props: NumberCellProps) {
   if (!isEditing) {
     return (
       <td
-        className={`${baseClasses} ${colorClass}`}
-        onClick={onStartEdit}
-        onDoubleClick={onStartEdit}
+        className={`${baseClasses} ${colorClass} ${
+          error ? 'text-destructive' : ''
+        }`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onStartEdit();
+        }}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          onStartEdit();
+        }}
+        title={error}
       >
         {displayText}
       </td>
@@ -145,13 +170,15 @@ export function NumberCell(props: NumberCellProps) {
   return (
     <td className={baseClasses}>
       <input
-        className='h-7 w-24 rounded border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
+        className={`bg-background focus-visible:ring-ring h-7 w-24 rounded border px-2 text-sm outline-none focus-visible:ring-2 ${
+          error ? 'border-destructive text-destructive' : 'border-input'
+        }`}
         autoFocus
         value={effectiveDraft}
         onChange={(e) => onChangeDraft(e.target.value)}
         onKeyDown={handleKeyDown}
+        title={error}
       />
     </td>
   );
 }
-
