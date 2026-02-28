@@ -39,6 +39,11 @@ export type ColumnMeta<Row = any, Value = any> = {
   formatter?: (value: Value, row: Row) => unknown;
   validate?: (value: Value, row: Row) => string | null | undefined;
   editorType?: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'custom';
+  /**
+   * 可选的 Zod Schema，用于结构化验证
+   * 如果提供，将优先使用此 Schema 进行验证
+   */
+  zodSchema?: import('zod').ZodType<Value>;
   // 业务自定义元数据
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
