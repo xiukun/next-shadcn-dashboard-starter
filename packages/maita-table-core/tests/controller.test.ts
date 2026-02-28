@@ -27,7 +27,14 @@ function createInitialState(): DataGridControllerState<Row> {
       editingDraftValues: {},
       validationErrors: {},
       scrollTop: 0,
-      scrollLeft: 0
+      scrollLeft: 0,
+      pendingEdits: [],
+      submission: {
+        status: 'idle',
+        submittedRows: [],
+        failedRows: []
+      },
+      rowValidationErrors: {}
     },
     data: {
       rows: [],
@@ -84,7 +91,10 @@ describe('createDefaultController', () => {
       initialValue: 'Row 1'
     });
 
-    expect(started.runtime.editingCell).toEqual({ rowKey: 1, columnId: 'name' });
+    expect(started.runtime.editingCell).toEqual({
+      rowKey: 1,
+      columnId: 'name'
+    });
     expect(started.runtime.editingDraftValues['1:name']).toBe('Row 1');
 
     const changed = controller.reduce(started, {

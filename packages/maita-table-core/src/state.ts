@@ -14,6 +14,23 @@ export interface EditCell {
   columnId: string;
 }
 
+export interface PendingEdit<Row = any> {
+  rowKey: string;
+  rowIndex: number;
+  originalRow: Row;
+  editedRow: Partial<Row>;
+  timestamp: number;
+}
+
+export interface SubmissionState {
+  status: 'idle' | 'submitting' | 'success' | 'error';
+  submittedRows: string[]; // rowKeys
+  failedRows: Array<{
+    rowKey: string;
+    error: string;
+  }>;
+}
+
 export interface DataGridViewState<Row = any> {
   columns: ColumnConfig<Row>[];
   sort: SortState;
@@ -38,6 +55,18 @@ export interface DataGridRuntimeState<Row = any> {
   validationErrors: Record<string, string>;
   scrollTop: number;
   scrollLeft: number;
+  /**
+   * 待提交的编辑记录
+   */
+  pendingEdits: PendingEdit<Row>[];
+  /**
+   * 提交状态
+   */
+  submission: SubmissionState;
+  /**
+   * 行级验证错误，key 为 rowKey
+   */
+  rowValidationErrors: Record<string, string[]>;
 }
 
 export interface DataGridControllerState<Row = any> {

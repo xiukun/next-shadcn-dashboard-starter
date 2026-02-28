@@ -52,7 +52,14 @@ export function useDataGrid<Row>(
         editingDraftValues: {},
         validationErrors: {},
         scrollTop: 0,
-        scrollLeft: 0
+        scrollLeft: 0,
+        pendingEdits: [],
+        submission: {
+          status: 'idle',
+          submittedRows: [],
+          failedRows: []
+        },
+        rowValidationErrors: {}
       },
       data: {
         rows: [],

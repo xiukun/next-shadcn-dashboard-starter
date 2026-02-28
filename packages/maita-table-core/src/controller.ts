@@ -28,6 +28,36 @@ export type DataGridInternalEvent<Row = any> =
   | {
       type: 'edit/commit';
       cell: DataGridControllerState<Row>['runtime']['editingCell'];
+    }
+  | {
+      type: 'edit/queue';
+      cell: DataGridControllerState<Row>['runtime']['editingCell'];
+      value: unknown;
+    }
+  | {
+      type: 'edit/queueRow';
+      rowKey: string;
+      editedRow: Partial<Row>;
+    }
+  | {
+      type: 'edit/removeFromQueue';
+      rowKey: string;
+    }
+  | {
+      type: 'submission/start';
+      rowKeys?: string[];
+    }
+  | {
+      type: 'submission/success';
+      rowKeys: string[];
+    }
+  | {
+      type: 'submission/error';
+      rowKeys: string[];
+      errors: Array<{ rowKey: string; error: string }>;
+    }
+  | {
+      type: 'submission/reset';
     };
 
 export interface DataGridController<Row = any> {
@@ -138,7 +168,8 @@ export function createDefaultController<Row = any>(): DataGridController<Row> {
           const cell = event.cell;
           if (!cell) return state;
           const key = `${cell.rowKey}:${cell.columnId}`;
-          const { [key]: _removed, ...restDrafts } = state.runtime.editingDraftValues;
+          const { [key]: _removed, ...restDrafts } =
+            state.runtime.editingDraftValues;
           return {
             ...state,
             runtime: {
@@ -157,13 +188,168 @@ export function createDefaultController<Row = any>(): DataGridController<Row> {
           const cell = event.cell;
           if (!cell) return state;
           const key = `${cell.rowKey}:${cell.columnId}`;
-          const { [key]: _removed, ...restDrafts } = state.runtime.editingDraftValues;
+          const { [key]: _removed, ...restDrafts } =
+            state.runtime.editingDraftValues;
           return {
             ...state,
             runtime: {
               ...state.runtime,
               editingCell: undefined,
               editingDraftValues: restDrafts
+            }
+          };
+        }
+        case 'edit/queue': {
+          const cell = event.cell;
+          if (!cell) return state;
+
+          // 查找对应的行
+          const rowIndex = state.data.rows.findIndex(
+            (r, i) =>
+              String(i) === String(cell.rowKey) || (r as any).id === cell.rowKey
+          );
+          if (rowIndex === -1) return state;
+
+          const row = state.data.rows[rowIndex] as Row;
+          const existingIndex = state.runtime.pendingEdits.findIndex(
+            (e) => e.rowKey === String(cell.rowKey)
+          );
+
+          const editedRow: Partial<Row> = {
+            ...(existingIndex >= 0
+              ? state.runtime.pendingEdits[existingIndex].editedRow
+              : {}),
+            [cell.columnId]: event.value
+          };
+
+          const pendingEdit = {
+            rowKey: String(cell.rowKey),
+            rowIndex,
+            originalRow: row,
+            editedRow,
+            timestamp: Date.now()
+          };
+
+          const nextPendingEdits = [...state.runtime.pendingEdits];
+          if (existingIndex >= 0) {
+            nextPendingEdits[existingIndex] = pendingEdit;
+          } else {
+            // 限制队列大小
+            const MAX_PENDING_EDITS = 1000;
+            if (nextPendingEdits.length >= MAX_PENDING_EDITS) {
+              nextPendingEdits.shift();
+            }
+            nextPendingEdits.push(pendingEdit);
+          }
+
+          return {
+            ...state,
+            runtime: {
+              ...state.runtime,
+              pendingEdits: nextPendingEdits
+            }
+          };
+        }
+        case 'edit/queueRow': {
+          const rowIndex = state.data.rows.findIndex(
+            (r, i) =>
+              String(i) === event.rowKey || (r as any).id === event.rowKey
+          );
+          if (rowIndex === -1) return state;
+
+          const row = state.data.rows[rowIndex] as Row;
+          const existingIndex = state.runtime.pendingEdits.findIndex(
+            (e) => e.rowKey === event.rowKey
+          );
+
+          const pendingEdit = {
+            rowKey: event.rowKey,
+            rowIndex,
+            originalRow: row,
+            editedRow: event.editedRow,
+            timestamp: Date.now()
+          };
+
+          const nextPendingEdits = [...state.runtime.pendingEdits];
+          if (existingIndex >= 0) {
+            nextPendingEdits[existingIndex] = pendingEdit;
+          } else {
+            const MAX_PENDING_EDITS = 1000;
+            if (nextPendingEdits.length >= MAX_PENDING_EDITS) {
+              nextPendingEdits.shift();
+            }
+            nextPendingEdits.push(pendingEdit);
+          }
+
+          return {
+            ...state,
+            runtime: {
+              ...state.runtime,
+              pendingEdits: nextPendingEdits
+            }
+          };
+        }
+        case 'edit/removeFromQueue': {
+          const nextPendingEdits = state.runtime.pendingEdits.filter(
+            (e) => e.rowKey !== event.rowKey
+          );
+          return {
+            ...state,
+            runtime: {
+              ...state.runtime,
+              pendingEdits: nextPendingEdits
+            }
+          };
+        }
+        case 'submission/start': {
+          return {
+            ...state,
+            runtime: {
+              ...state.runtime,
+              submission: {
+                status: 'submitting',
+                submittedRows: event.rowKeys || [],
+                failedRows: []
+              }
+            }
+          };
+        }
+        case 'submission/success': {
+          return {
+            ...state,
+            runtime: {
+              ...state.runtime,
+              submission: {
+                ...state.runtime.submission,
+                status: 'success',
+                submittedRows: event.rowKeys
+              }
+            }
+          };
+        }
+        case 'submission/error': {
+          return {
+            ...state,
+            runtime: {
+              ...state.runtime,
+              submission: {
+                status: 'error',
+                submittedRows: event.rowKeys,
+                failedRows: event.errors
+              }
+            }
+          };
+        }
+        case 'submission/reset': {
+          return {
+            ...state,
+            runtime: {
+              ...state.runtime,
+              submission: {
+                status: 'idle',
+                submittedRows: [],
+                failedRows: []
+              }
             }
           };
         }
