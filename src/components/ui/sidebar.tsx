@@ -308,7 +308,11 @@ function SidebarInset({ className, ...props }: React.ComponentProps<'main'>) {
     <main
       data-slot='sidebar-inset'
       className={cn(
-        'bg-background relative flex w-full flex-1 flex-col',
+        // 注意：这里不能用 w-full。
+        // 在“Sidebar + Inset”的横向 flex 布局里，w-full 会让 main 按视口全宽计算，
+        // 再叠加 sidebar 宽度造成横向溢出；配合 body 的 overflow-x-hidden 会裁掉右侧内容边线。
+        // 正确做法：让宽度由 flex 分配，并允许收缩（min-w-0）。
+        'bg-background relative flex w-auto min-w-0 flex-1 flex-col',
         'md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2',
         className
       )}
