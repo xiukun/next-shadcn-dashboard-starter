@@ -17,10 +17,17 @@ import { TextCell } from './cells/text-cell';
 import { CheckboxCell } from './cells/checkbox-cell';
 import { SubmissionControls } from './components/SubmissionControls';
 import { ColumnManagementPanel } from './components/ColumnManagementPanel';
+import {
+  SelectionCheckbox,
+  HeaderSelectionCheckbox
+} from './components/SelectionCheckbox';
 import { useDebouncedCallback } from './hooks/useDebounce';
 import { useThrottledCallback } from './hooks/useThrottle';
 import { useColumnPersistence } from './hooks/useColumnPersistence';
 import { useColumnVirtualization } from './hooks/useColumnVirtualization';
+import { useRowSelection, type SelectionMode } from './hooks/useRowSelection';
+import { useSelectionPersistence } from './hooks/useSelectionPersistence';
+import type { RowKey } from '@maita-table/core';
 
 export type EditMode = 'immediate' | 'single-row' | 'batch';
 
@@ -38,6 +45,34 @@ export interface DataGridProps<Row> {
    * 是否在列表头显示垂直分隔线（便于发现列边界和调整手柄）
    */
   showHeaderVerticalDividers?: boolean;
+  /**
+   * 是否启用行选择功能（默认 true）
+   */
+  enableRowSelection?: boolean;
+  /**
+   * 选择模式：'single' 单选，'multiple' 多选（默认）
+   */
+  selectionMode?: SelectionMode;
+  /**
+   * 受控模式：外部控制的选择状态
+   */
+  selectedRowKeys?: RowKey[];
+  /**
+   * 选择状态变更回调
+   */
+  onSelectionChange?: (selectedRowKeys: RowKey[]) => void;
+  /**
+   * 是否启用选择状态持久化（默认 true）
+   */
+  enableSelectionPersistence?: boolean;
+  /**
+   * 自定义 Checkbox 组件（可选，用于使用 shadcn/ui 的 Checkbox）
+   */
+  CheckboxComponent?: React.ComponentType<{
+    checked?: boolean;
+    onCheckedChange?: (checked: boolean) => void;
+    'aria-checked'?: boolean | 'mixed';
+  }>;
 }
 
 export function DataGrid<Row>(props: DataGridProps<Row>) {
@@ -49,7 +84,13 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
     onValidationError,
     onSubmissionError,
     id,
-    showHeaderVerticalDividers = false
+    showHeaderVerticalDividers = false,
+    enableRowSelection = true,
+    selectionMode = 'multiple',
+    selectedRowKeys: controlledSelectedRowKeys,
+    onSelectionChange,
+    enableSelectionPersistence = true,
+    CheckboxComponent
   } = props;
   const { state, store } = useDataGrid<Row>(props);
 
@@ -57,6 +98,24 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
   const { saveColumnState, clearColumnState } = useColumnPersistence({
     gridId: id
   });
+
+  // 行选择功能
+  const selection = useRowSelection({
+    store,
+    selectionMode: enableRowSelection ? selectionMode : 'multiple',
+    selectedRowKeys: controlledSelectedRowKeys,
+    onSelectionChange
+  });
+
+  // 选择状态持久化
+  useSelectionPersistence({
+    gridId: id,
+    enabled: enableRowSelection && enableSelectionPersistence,
+    store
+  });
+
+  // 记录上次选中的行（用于范围选择）
+  const lastSelectedRowKeyRef = React.useRef<RowKey | null>(null);
 
   // 防抖处理编辑草稿值更新（150ms）
   const debouncedDispatchChange = useDebouncedCallback(
@@ -235,6 +294,53 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
 
   const virtualItems = rowVirtualizer.getVirtualItems();
   const totalSize = rowVirtualizer.getTotalSize();
+
+  // 获取当前页所有行的 key（用于全选）
+  const currentPageRowKeys = React.useMemo(() => {
+    return rows.map((row) => row.id as RowKey);
+  }, [rows]);
+
+  // 处理行选择（支持 Shift+Click 范围选择）
+  const handleRowToggle = React.useCallback(
+    (rowKey: RowKey, event?: React.MouseEvent) => {
+      if (!enableRowSelection) return;
+
+      const isShiftClick = event?.shiftKey ?? false;
+
+      if (isShiftClick && lastSelectedRowKeyRef.current !== null) {
+        // 范围选择
+        selection.selectRange(
+          lastSelectedRowKeyRef.current,
+          rowKey,
+          currentPageRowKeys
+        );
+      } else {
+        // 普通选择
+        selection.toggleRow(rowKey);
+        lastSelectedRowKeyRef.current = rowKey;
+      }
+    },
+    [enableRowSelection, selection, currentPageRowKeys]
+  );
+
+  // 处理全选
+  const handleToggleAll = React.useCallback(() => {
+    if (!enableRowSelection) return;
+
+    const totalCount = currentPageRowKeys.length;
+    if (totalCount === 0) return;
+
+    const selectedOnPage =
+      selection.getSelectedCountForKeys(currentPageRowKeys);
+
+    if (selectedOnPage === totalCount) {
+      // 当前页已全部选中 → 一次性取消当前页所有选择
+      selection.deselectKeys(currentPageRowKeys);
+    } else {
+      // 当前页未全部选中 → 一次性选中当前页所有行
+      selection.selectKeys(currentPageRowKeys);
+    }
+  }, [enableRowSelection, selection, currentPageRowKeys]);
 
   const paddingTop = virtualItems.length > 0 ? virtualItems[0]!.start : 0;
   const paddingBottom =
@@ -487,6 +593,15 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
           <thead className='mt-grid-thead bg-muted/40 sticky top-0 z-10 backdrop-blur'>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className='mt-grid-tr border-b'>
+                {/* 选择列的表头 checkbox */}
+                {enableRowSelection && (
+                  <HeaderSelectionCheckbox
+                    allRowKeys={currentPageRowKeys}
+                    selection={selection}
+                    onToggleAll={handleToggleAll}
+                    CheckboxComponent={CheckboxComponent}
+                  />
+                )}
                 {headerGroup.headers.map((header, headerIndex) => {
                   const columnId = header.column.id;
                   const viewState = state.view;
@@ -494,7 +609,8 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                   const pinned = viewState.columnsPinned?.[columnId];
 
                   // 计算当前列之前的左固定列宽度
-                  let leftOffset = 0;
+                  // 如果启用了行选择，选择列（48px）是最左侧的固定列
+                  let leftOffset = enableRowSelection ? 48 : 0;
                   for (let i = 0; i < headerIndex; i++) {
                     const prevHeader = headerGroup.headers[i];
                     if (prevHeader) {
@@ -550,7 +666,7 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                           position: 'sticky',
                           left: leftOffset,
                           top: 0,
-                          zIndex: 30, // 高于 thead 的 z-10，确保固定在表头行上方
+                          zIndex: 30, // 高于 thead 的 z-10，但低于选择列表头（z-40）
                           backgroundColor: 'hsl(var(--muted))' // 确保背景色正确，避免内容透过
                         }
                       : pinned === 'right'
@@ -558,7 +674,7 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                             position: 'sticky',
                             right: rightOffset,
                             top: 0,
-                            zIndex: 30, // 高于 thead 的 z-10，确保固定在表头行上方
+                            zIndex: 30, // 高于 thead 的 z-10，但低于选择列表头（z-40）
                             backgroundColor: 'hsl(var(--muted))' // 确保背景色正确，避免内容透过
                           }
                         : {})
@@ -604,19 +720,39 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
             {paddingTop > 0 && (
               <tr>
                 <td
-                  colSpan={allVisibleColumns.length}
+                  colSpan={
+                    allVisibleColumns.length + (enableRowSelection ? 1 : 0)
+                  }
                   style={{ height: paddingTop }}
                 />
               </tr>
             )}
             {virtualItems.map((virtualRow) => {
               const row = rows[virtualRow.index];
+              const rowKey = row.id as RowKey;
+              const isRowSelected =
+                enableRowSelection && selection.isSelected(rowKey);
+
               return (
                 <tr
                   key={row.id}
-                  className='mt-grid-tr hover:bg-muted/40 border-b transition-colors last:border-b-0'
+                  className={`mt-grid-tr border-b transition-colors last:border-b-0 ${
+                    isRowSelected
+                      ? 'bg-primary/10 hover:bg-primary/20'
+                      : 'hover:bg-muted/40'
+                  }`}
                   style={{ height: virtualRow.size }}
                 >
+                  {/* 选择列的行 checkbox */}
+                  {enableRowSelection && (
+                    <SelectionCheckbox
+                      rowKey={rowKey}
+                      isSelected={isRowSelected}
+                      selection={selection}
+                      onToggle={() => handleRowToggle(rowKey)}
+                      CheckboxComponent={CheckboxComponent}
+                    />
+                  )}
                   {row.getVisibleCells().map((cell, cellIndex) => {
                     const columnId = cell.column.id;
                     const meta = cell.column.columnDef.meta as
@@ -628,7 +764,8 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                     const pinned = viewState.columnsPinned?.[columnId];
 
                     // 计算当前单元格之前的左固定列宽度
-                    let cellLeftOffset = 0;
+                    // 如果启用了行选择，选择列（48px）是最左侧的固定列
+                    let cellLeftOffset = enableRowSelection ? 48 : 0;
                     const allCells = row.getVisibleCells();
                     for (let i = 0; i < cellIndex; i++) {
                       const prevCell = allCells[i];
@@ -677,7 +814,7 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                         ? {
                             position: 'sticky',
                             left: cellLeftOffset,
-                            zIndex: 20, // 高于普通单元格，但低于表头固定列（z-30）
+                            zIndex: 20, // 高于普通单元格，但低于表头固定列（z-30）和选择列（z-20，但选择列在左侧最前）
                             backgroundColor: 'hsl(var(--background))' // 确保背景色正确
                           }
                         : pinned === 'right'

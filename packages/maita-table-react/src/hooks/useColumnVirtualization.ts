@@ -118,7 +118,8 @@ export function useColumnVirtualization(
     const startOffset = startIndex > 0 ? columnOffsets[startIndex]!.start : 0;
     const endOffset =
       endIndex < columnOffsets.length - 1
-        ? totalWidth - columnOffsets[endIndex]!.end
+        ? totalWidth -
+          (columnOffsets[endIndex]!.start + columnOffsets[endIndex]!.width)
         : 0;
 
     return {

@@ -8,6 +8,7 @@ import { createNextDataSource } from '@maita-table/next';
 import type { ColumnConfig } from '@maita-table/core';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -31,12 +32,12 @@ const dataSource = createNextDataSource<DemoRow>('/api/maita-table-demo');
 const DataGrid = dynamic(
   async () => {
     const mod = await import('@maita-table/react');
-    return mod.DataGrid as typeof mod.DataGrid;
+    return { default: mod.DataGrid };
   },
   {
     ssr: false
   }
-);
+) as React.ComponentType<import('@maita-table/react').DataGridProps<DemoRow>>;
 
 export default function Page() {
   const t = useTranslations('maita-table-demo');
@@ -191,7 +192,7 @@ export default function Page() {
         )}
       </div>
 
-      <DataGrid<DemoRow>
+      <DataGrid
         id='maita-table-demo'
         columns={columns}
         dataSource={dataSource}
@@ -203,6 +204,7 @@ export default function Page() {
         // 在列表头显示竖向分隔线，便于感知列边界和调整手柄
         showHeaderVerticalDividers
         editMode={editMode}
+        CheckboxComponent={Checkbox}
         onSubmit={editMode !== 'immediate' ? handleSubmit : undefined}
         onValidationError={(errors) => {
           const errorMessages = Object.values(errors);
