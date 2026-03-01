@@ -102,7 +102,8 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
     selectedRowKeys: controlledSelectedRowKeys,
     onSelectionChange,
     enableSelectionPersistence = true,
-    CheckboxComponent
+    CheckboxComponent,
+    columnMenuLabels
   } = props;
   const { state, store } = useDataGrid<Row>(props);
 
