@@ -3,14 +3,18 @@
 import * as React from 'react';
 import type {
   ColumnConfig,
-  DataGridControllerState,
   DataGridResult,
   DataGridViewState,
-  DataSource
+  DataSource,
+  DataGridQuery
 } from '@maita-table/core';
-import { createDefaultController } from '@maita-table/core';
-import { createDataGridStore, type ReactDataGridStore } from './store';
+import {
+  createDataGridStore,
+  createInitialState,
+  type DataGridStore
+} from './store/index';
 import { useColumnPersistence } from './hooks/useColumnPersistence';
+import type { DataGridStoreState } from './store/types';
 
 export interface UseDataGridProps<Row> {
   id: string;
@@ -18,11 +22,18 @@ export interface UseDataGridProps<Row> {
   dataSource: DataSource<Row>;
   initialViewState?: Partial<DataGridViewState<Row>>;
   enableColumnPersistence?: boolean;
+  /**
+   * 初始分页状态
+   */
+  initialPagination?: {
+    pageIndex?: number;
+    pageSize?: number;
+  };
 }
 
 export interface UseDataGridResult<Row> {
-  state: DataGridControllerState<Row>;
-  store: ReactDataGridStore<Row>;
+  state: DataGridStoreState<Row>;
+  store: DataGridStore<Row>;
 }
 
 export function useDataGrid<Row>(
@@ -33,7 +44,8 @@ export function useDataGrid<Row>(
     dataSource,
     initialViewState,
     id,
-    enableColumnPersistence = true
+    enableColumnPersistence = true,
+    initialPagination
   } = props;
 
   // 列状态持久化（仅在浏览器端、组件挂载后加载，避免 SSR 与水合不一致）
@@ -42,77 +54,66 @@ export function useDataGrid<Row>(
     enabled: enableColumnPersistence
   });
 
-  const storeRef = React.useRef<ReactDataGridStore<Row> | undefined>(undefined);
+  const storeRef = React.useRef<DataGridStore<Row> | undefined>(undefined);
 
   if (!storeRef.current) {
-    const controller = createDefaultController<Row>();
+    // 从 initialViewState 中排除 columns，因为 columns 已经作为单独参数传入
+    const { columns: _, ...viewStateWithoutColumns } = initialViewState ?? {};
 
-    const initialState: DataGridControllerState<Row> = {
+    type ViewStateWithoutColumns = Omit<
+      DataGridStoreState<Row>['view'],
+      'columns'
+    >;
+
+    const initialState = createInitialState<Row>(columns, {
       view: {
-        columns,
         sort: [],
         filters: [],
         globalSearch: undefined,
         groupBy: [],
-        paginationMode: 'page',
-        pageIndex: 0,
-        pageSize: 20,
         density: 'comfortable',
-        // 注意：这里只使用来自 props 的 initialViewState，
+        // 注意：这里只使用来自 props 的 initialViewState（排除 columns），
         // 不在首屏渲染阶段读取 localStorage，
         // 以避免服务端与客户端初始 HTML 不一致导致的水合错误。
-        ...(initialViewState ?? {})
+        ...(viewStateWithoutColumns as Partial<ViewStateWithoutColumns>)
       },
-      runtime: {
-        loading: false,
-        selection: new Set(),
-        expandedRowKeys: new Set(),
-        editingDraftValues: {},
-        validationErrors: {},
-        scrollTop: 0,
-        scrollLeft: 0,
-        pendingEdits: [],
-        submission: {
-          status: 'idle',
-          submittedRows: [],
-          failedRows: []
-        },
-        rowValidationErrors: {}
-      },
-      data: {
-        rows: [],
-        totalRowCount: 0
+      pagination: {
+        pageIndex:
+          initialPagination?.pageIndex ?? initialViewState?.pageIndex ?? 0,
+        pageSize:
+          initialPagination?.pageSize ?? initialViewState?.pageSize ?? 20
       }
-    };
-
-    storeRef.current = createDataGridStore<Row>({
-      initialState,
-      controller
     });
+
+    storeRef.current = createDataGridStore<Row>(initialState);
   }
 
   const store = storeRef.current!;
-  const [state, setState] = React.useState<DataGridControllerState<Row>>(
-    store.getState()
+
+  // 订阅状态变化（使用 selector 来触发重新渲染）
+  const state = React.useSyncExternalStore(
+    store.subscribe,
+    () => store.getState(),
+    () => store.getState()
   );
 
   React.useEffect(() => {
-    const unsubscribe = store.subscribe((next) => {
-      setState(next);
-    });
-    return unsubscribe;
-  }, [store]);
-
-  React.useEffect(() => {
     let aborted = false;
-    const controller = store.controller;
     const current = store.getState();
-    const query = controller.buildQuery(current);
 
-    store.dispatch({
-      type: 'runtime/patch',
-      patch: { loading: true }
-    });
+    // 构建查询
+    const query: DataGridQuery = {
+      sort: current.view.sort,
+      filters: current.view.filters,
+      globalSearch: current.view.globalSearch,
+      groupBy: current.view.groupBy,
+      page: {
+        index: current.pagination.pageIndex,
+        size: current.pagination.pageSize
+      }
+    };
+
+    store.getState().setLoading(true);
 
     const abortController = new AbortController();
 
@@ -120,26 +121,15 @@ export function useDataGrid<Row>(
       .fetch(query, abortController.signal)
       .then((result: DataGridResult<Row>) => {
         if (aborted) return;
-        const next: DataGridControllerState<Row> = {
-          ...store.getState(),
-          runtime: {
-            ...store.getState().runtime,
-            loading: false
-          },
-          data: result
-        };
-        store.setState(next);
+        store.getState().setRows(result.rows);
+        if (result.totalRowCount !== undefined) {
+          store.getState().setTotalCount(result.totalRowCount);
+        }
+        store.getState().setLoading(false);
       })
       .catch(() => {
         if (aborted) return;
-        const currentState = store.getState();
-        store.setState({
-          ...currentState,
-          runtime: {
-            ...currentState.runtime,
-            loading: false
-          }
-        });
+        store.getState().setLoading(false);
       });
 
     return () => {
@@ -161,7 +151,9 @@ export function useDataGrid<Row>(
     const current = store.getState();
 
     // 处理列顺序：基于持久化结果，但自动补全新增列、移除已不存在的列
-    const allColumnIds = current.view.columns.map((c) => c.id);
+    const allColumnIds = current.view.columns.map(
+      (c: ColumnConfig<Row>) => c.id
+    );
     let nextOrder =
       persisted.columnsOrder && persisted.columnsOrder.length > 0
         ? [...persisted.columnsOrder]
@@ -170,27 +162,36 @@ export function useDataGrid<Row>(
           : [...allColumnIds];
 
     // 过滤掉已经不存在的列
-    nextOrder = nextOrder.filter((id) => allColumnIds.includes(id));
+    nextOrder = nextOrder.filter((columnId: string) =>
+      allColumnIds.includes(columnId)
+    );
     // 把新增列 append 到末尾
-    allColumnIds.forEach((id) => {
-      if (!nextOrder.includes(id)) nextOrder.push(id);
+    allColumnIds.forEach((columnId: string) => {
+      if (!nextOrder.includes(columnId)) nextOrder.push(columnId);
     });
 
     // 只覆盖视图中和列相关的配置，保留其它状态；
     // 对于新增列，如果持久化里没有记录，则使用当前视图（通常来自 initialViewState）的默认值。
-    const nextView: DataGridViewState<Row> = {
-      ...current.view,
-      columnsOrder: nextOrder,
-      columnsWidth: persisted.columnsWidth ?? current.view.columnsWidth,
-      columnsVisibility:
-        persisted.columnsVisibility ?? current.view.columnsVisibility,
-      columnsPinned: persisted.columnsPinned ?? current.view.columnsPinned
-    };
-
-    store.setState({
-      ...current,
-      view: nextView
-    });
+    if (nextOrder.length > 0) {
+      store.getState().setColumnsOrder(nextOrder);
+    }
+    if (persisted.columnsWidth) {
+      Object.entries(persisted.columnsWidth).forEach(([columnId, width]) => {
+        store.getState().setColumnWidth(columnId, width);
+      });
+    }
+    if (persisted.columnsVisibility) {
+      Object.entries(persisted.columnsVisibility).forEach(
+        ([columnId, visible]) => {
+          store.getState().setColumnVisibility(columnId, visible);
+        }
+      );
+    }
+    if (persisted.columnsPinned) {
+      Object.entries(persisted.columnsPinned).forEach(([columnId, pinned]) => {
+        store.getState().setColumnPinned(columnId, pinned);
+      });
+    }
   }, [enableColumnPersistence, loadColumnState, store]);
 
   return { state, store };

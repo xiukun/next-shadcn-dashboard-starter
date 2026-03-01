@@ -2,10 +2,10 @@
 
 import { useCallback, useMemo } from 'react';
 import type { FilterState, FilterOperator } from '@maita-table/core';
-import type { ReactDataGridStore } from '../store';
+import type { DataGridStore } from '../store';
 
 export interface UseColumnFilteringOptions<Row> {
-  store: ReactDataGridStore<Row>;
+  store: DataGridStore<Row>;
 }
 
 export interface UseColumnFilteringResult {
@@ -84,8 +84,7 @@ export function useColumnFiltering<Row>(
 
   const setFilter = useCallback(
     (columnId: string, operator: FilterOperator, value: unknown) => {
-      const current = store.getState();
-      const currentFilters = current.view.filters || [];
+      const currentFilters = store.getState().view.filters || [];
       const existingIndex = currentFilters.findIndex((f) => f.id === columnId);
 
       let nextFilters: FilterState;
@@ -109,43 +108,22 @@ export function useColumnFiltering<Row>(
         }
       }
 
-      store.setState({
-        ...current,
-        view: {
-          ...current.view,
-          filters: nextFilters
-        }
-      });
+      store.getState().setFilters(nextFilters);
     },
     [store]
   );
 
   const clearFilter = useCallback(
     (columnId: string) => {
-      const current = store.getState();
-      const currentFilters = current.view.filters || [];
+      const currentFilters = store.getState().view.filters || [];
       const nextFilters = currentFilters.filter((f) => f.id !== columnId);
-
-      store.setState({
-        ...current,
-        view: {
-          ...current.view,
-          filters: nextFilters
-        }
-      });
+      store.getState().setFilters(nextFilters);
     },
     [store]
   );
 
   const clearAllFilters = useCallback(() => {
-    const current = store.getState();
-    store.setState({
-      ...current,
-      view: {
-        ...current.view,
-        filters: []
-      }
-    });
+    store.getState().setFilters([]);
   }, [store]);
 
   return {

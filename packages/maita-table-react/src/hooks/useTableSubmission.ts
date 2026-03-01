@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
-import type { ReactDataGridStore } from '../store';
+import type { DataGridStore } from '../store';
 import type { ColumnConfig } from '@maita-table/core';
 import { createRowSchema } from '@maita-table/core';
 
 export interface UseTableSubmissionOptions<Row> {
-  store: ReactDataGridStore<Row>;
+  store: DataGridStore<Row>;
   columns: ColumnConfig<Row>[];
   onSubmit: (edits: Array<{ rowKey: string; row: Row }>) => Promise<void>;
   validateRow?: (
@@ -92,24 +92,21 @@ export function useTableSubmission<Row>(
 
       if (!validation.success) {
         // 设置验证错误
-        store.dispatch({
-          type: 'runtime/patch',
-          patch: {
-            validationErrors: validation.errors || {},
-            rowValidationErrors: {
-              ...state.runtime.rowValidationErrors,
-              [rowKey]: []
-            }
-          }
-        });
+        const storeState = store.getState();
+        if (validation.errors) {
+          Object.entries(validation.errors).forEach(([key, error]) => {
+            storeState.setValidationError(key, error);
+          });
+        }
+        storeState.setRowValidationErrors(
+          rowKey,
+          validation.errors ? Object.values(validation.errors) : []
+        );
         return;
       }
 
       // 开始提交
-      store.dispatch({
-        type: 'submission/start',
-        rowKeys: [rowKey]
-      });
+      store.getState().startSubmission([rowKey]);
 
       try {
         // 转换数据类型以匹配 schema
@@ -142,22 +139,17 @@ export function useTableSubmission<Row>(
         await onSubmit([{ rowKey, row: mergedRow }]);
 
         // 提交成功
-        store.dispatch({
-          type: 'submission/success',
-          rowKeys: [rowKey]
-        });
+        store.getState().completeSubmission([rowKey]);
 
         // 从队列移除
-        store.dispatch({
-          type: 'edit/removeFromQueue',
-          rowKey
-        });
+        store.getState().removeFromQueue(rowKey);
       } catch (error) {
-        store.dispatch({
-          type: 'submission/error',
-          rowKeys: [rowKey],
-          errors: [{ rowKey, error: (error as Error).message }]
-        });
+        store
+          .getState()
+          .failSubmission(
+            [rowKey],
+            [{ rowKey, error: (error as Error).message }]
+          );
       }
     },
     [store, validateSingleRow, onSubmit]
@@ -198,12 +190,12 @@ export function useTableSubmission<Row>(
         Object.keys(allErrors).length > 0 ||
         Object.keys(rowErrors).length > 0
       ) {
-        store.dispatch({
-          type: 'runtime/patch',
-          patch: {
-            validationErrors: allErrors,
-            rowValidationErrors: rowErrors
-          }
+        const storeState = store.getState();
+        Object.entries(allErrors).forEach(([key, error]) => {
+          storeState.setValidationError(key, error);
+        });
+        Object.entries(rowErrors).forEach(([rowKey, errors]) => {
+          storeState.setRowValidationErrors(rowKey, errors);
         });
         // 抛出验证错误，让调用者可以处理
         const errorMessages = Object.values(allErrors);
@@ -219,10 +211,7 @@ export function useTableSubmission<Row>(
 
       // 开始提交
       const keysToSubmit = editsToSubmit.map((e) => e.rowKey);
-      store.dispatch({
-        type: 'submission/start',
-        rowKeys: keysToSubmit
-      });
+      store.getState().startSubmission(keysToSubmit);
 
       try {
         // 转换数据类型以匹配 schema
@@ -254,27 +243,21 @@ export function useTableSubmission<Row>(
         await onSubmit(submitData);
 
         // 提交成功
-        store.dispatch({
-          type: 'submission/success',
-          rowKeys: keysToSubmit
-        });
+        store.getState().completeSubmission(keysToSubmit);
 
         // 从队列移除
+        const storeState = store.getState();
         keysToSubmit.forEach((rowKey) => {
-          store.dispatch({
-            type: 'edit/removeFromQueue',
-            rowKey
-          });
+          storeState.removeFromQueue(rowKey);
         });
       } catch (error) {
-        store.dispatch({
-          type: 'submission/error',
-          rowKeys: keysToSubmit,
-          errors: keysToSubmit.map((rowKey) => ({
+        store.getState().failSubmission(
+          keysToSubmit,
+          keysToSubmit.map((rowKey) => ({
             rowKey,
             error: (error as Error).message
           }))
-        });
+        );
       }
     },
     [store, validateSingleRow, onSubmit]

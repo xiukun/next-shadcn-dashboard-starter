@@ -2,12 +2,12 @@
 
 import { useCallback, useMemo } from 'react';
 import type { RowKey } from '@maita-table/core';
-import type { ReactDataGridStore } from '../store';
+import type { DataGridStore } from '../store';
 
 export type SelectionMode = 'single' | 'multiple';
 
 export interface UseRowSelectionOptions<Row> {
-  store: ReactDataGridStore<Row>;
+  store: DataGridStore<Row>;
   selectionMode?: SelectionMode;
   selectedRowKeys?: RowKey[];
   onSelectionChange?: (selectedRowKeys: RowKey[]) => void;
@@ -73,14 +73,7 @@ export function useRowSelection<Row>(
 
   const updateSelection = useCallback(
     (newSelection: Set<RowKey>) => {
-      const current = store.getState();
-      store.setState({
-        ...current,
-        runtime: {
-          ...current.runtime,
-          selection: newSelection
-        }
-      });
+      store.getState().setSelection(newSelection);
       notifySelectionChange(newSelection);
     },
     [store, notifySelectionChange]

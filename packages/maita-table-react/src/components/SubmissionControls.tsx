@@ -2,11 +2,11 @@
 
 import * as React from 'react';
 import { useTableSubmission } from '../hooks/useTableSubmission';
-import type { ReactDataGridStore } from '../store';
+import type { DataGridStore } from '../store';
 import type { ColumnConfig } from '@maita-table/core';
 
 export interface SubmissionControlsProps<Row> {
-  store: ReactDataGridStore<Row>;
+  store: DataGridStore<Row>;
   onSubmit: (edits: Array<{ rowKey: string; row: Row }>) => Promise<void>;
   columns: ColumnConfig<Row>[];
   onValidationError?: (errors: Record<string, string>) => void;
@@ -90,13 +90,11 @@ export function SubmissionControls<Row>(props: SubmissionControlsProps<Row>) {
           <button
             onClick={() => {
               // 清空所有待提交的编辑
+              const storeState = store.getState();
               state.runtime.pendingEdits.forEach((edit) => {
-                store.dispatch({
-                  type: 'edit/removeFromQueue',
-                  rowKey: edit.rowKey
-                });
+                storeState.removeFromQueue(edit.rowKey);
               });
-              store.dispatch({ type: 'submission/reset' });
+              storeState.resetSubmission();
             }}
             className='hover:bg-accent rounded-md border px-4 py-2'
             aria-label='取消'

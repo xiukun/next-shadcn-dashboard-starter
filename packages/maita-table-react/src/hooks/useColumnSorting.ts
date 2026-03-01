@@ -2,12 +2,12 @@
 
 import { useCallback, useMemo } from 'react';
 import type { SortState } from '@maita-table/core';
-import type { ReactDataGridStore } from '../store';
+import type { DataGridStore } from '../store';
 
 export type SortDirection = 'asc' | 'desc' | null;
 
 export interface UseColumnSortingOptions<Row> {
-  store: ReactDataGridStore<Row>;
+  store: DataGridStore<Row>;
   /**
    * 是否启用多列排序（默认 false）
    */
@@ -45,8 +45,7 @@ export function useColumnSorting<Row>(
   const { store, enableMultiSort = false } = options;
 
   const getSortState = useCallback((): SortState => {
-    const state = store.getState();
-    return state.view.sort || [];
+    return store.getState().view.sort || [];
   }, [store]);
 
   const getSortDirection = useCallback(
@@ -71,8 +70,7 @@ export function useColumnSorting<Row>(
 
   const toggleSort = useCallback(
     (columnId: string, event?: React.MouseEvent) => {
-      const current = store.getState();
-      const currentSort = current.view.sort || [];
+      const currentSort = store.getState().view.sort || [];
       const currentIndex = currentSort.findIndex((s) => s.id === columnId);
       const isMultiSort = enableMultiSort && (event?.ctrlKey || event?.metaKey);
 
@@ -107,26 +105,13 @@ export function useColumnSorting<Row>(
         }
       }
 
-      store.setState({
-        ...current,
-        view: {
-          ...current.view,
-          sort: nextSort
-        }
-      });
+      store.getState().setSort(nextSort);
     },
     [store, enableMultiSort]
   );
 
   const clearSort = useCallback(() => {
-    const current = store.getState();
-    store.setState({
-      ...current,
-      view: {
-        ...current.view,
-        sort: []
-      }
-    });
+    store.getState().setSort([]);
   }, [store]);
 
   return {

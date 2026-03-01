@@ -2,12 +2,12 @@
 
 import { useEffect, useCallback } from 'react';
 import type { RowKey } from '@maita-table/core';
-import type { ReactDataGridStore } from '../store';
+import type { DataGridStore } from '../store';
 
 export interface SelectionPersistenceConfig {
   gridId: string;
   enabled?: boolean;
-  store: ReactDataGridStore<any>;
+  store: DataGridStore<any>;
 }
 
 const STORAGE_KEY_PREFIX = 'grid-selection-';
@@ -82,19 +82,15 @@ export function useSelectionPersistence(config: SelectionPersistenceConfig) {
     if (savedKeys.length === 0) return;
 
     const current = store.getState();
-    const currentRowKeys = current.data.rows.map((row) => row.id as RowKey);
+    const currentRowKeys = current.data.rows.map(
+      (row) => (row as any).id as RowKey
+    );
 
     // 仅恢复在当前数据源中仍然存在的行
     const validKeys = savedKeys.filter((key) => currentRowKeys.includes(key));
 
     if (validKeys.length > 0) {
-      store.setState({
-        ...current,
-        runtime: {
-          ...current.runtime,
-          selection: new Set(validKeys)
-        }
-      });
+      store.getState().setSelection(new Set(validKeys));
     } else {
       // 如果没有有效的 key，清除持久化状态
       clearSelection();
