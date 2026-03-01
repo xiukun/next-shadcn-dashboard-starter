@@ -666,16 +666,20 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                           position: 'sticky',
                           left: leftOffset,
                           top: 0,
-                          zIndex: 30, // 高于 thead 的 z-10，但低于选择列表头（z-40）
-                          backgroundColor: 'hsl(var(--muted))' // 确保背景色正确，避免内容透过
+                          zIndex: 40, // 高于 thead 的 z-10，但低于选择列表头（z-50）
+                          backgroundColor: 'var(--muted)', // 使用var()直接引用，兼容lab()格式，确保背景色正确，避免内容透过
+                          // 添加右侧阴影，视觉上区分固定列和非固定列
+                          boxShadow: '2px 0 4px -2px rgba(0, 0, 0, 0.1)'
                         }
                       : pinned === 'right'
                         ? {
                             position: 'sticky',
                             right: rightOffset,
                             top: 0,
-                            zIndex: 30, // 高于 thead 的 z-10，但低于选择列表头（z-40）
-                            backgroundColor: 'hsl(var(--muted))' // 确保背景色正确，避免内容透过
+                            zIndex: 40, // 高于 thead 的 z-10，但低于选择列表头（z-50）
+                            backgroundColor: 'var(--muted)', // 使用var()直接引用，兼容lab()格式，确保背景色正确，避免内容透过
+                            // 添加左侧阴影，视觉上区分固定列和非固定列
+                            boxShadow: '-2px 0 4px -2px rgba(0, 0, 0, 0.1)'
                           }
                         : {})
                   };
@@ -716,7 +720,11 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
               </tr>
             ))}
           </thead>
-          <tbody className='mt-grid-tbody' onClick={handleTbodyClick}>
+          <tbody
+            className='mt-grid-tbody'
+            onClick={handleTbodyClick}
+            style={{ position: 'relative', zIndex: 0 }}
+          >
             {paddingTop > 0 && (
               <tr>
                 <td
@@ -809,20 +817,37 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                       }
                     }
 
+                    // 确保固定列始终有背景色，完全遮挡底层内容
+                    // 选中状态：使用 primary/10，未选中状态：使用 background
+                    // 使用 color-mix 来混合颜色，确保背景色不透明
+                    const fixedCellBackgroundColor = isRowSelected
+                      ? 'color-mix(in oklch, var(--primary) 10%, var(--background))' // 选中行：使用 primary 颜色的浅色背景
+                      : 'var(--background)'; // 未选中行：使用默认背景，确保不透明
+
                     const cellStickyStyle: React.CSSProperties =
                       pinned === 'left'
                         ? {
                             position: 'sticky',
                             left: cellLeftOffset,
-                            zIndex: 20, // 高于普通单元格，但低于表头固定列（z-30）和选择列（z-20，但选择列在左侧最前）
-                            backgroundColor: 'hsl(var(--background))' // 确保背景色正确
+                            zIndex: 20, // 高于普通单元格（z-0），但低于表头固定列（z-40）和选择列（z-30）
+                            // 确保背景色始终存在且不透明，完全遮挡底层内容
+                            backgroundColor: fixedCellBackgroundColor,
+                            // 添加右侧阴影，视觉上区分固定列和非固定列
+                            boxShadow: '2px 0 4px -2px rgba(0, 0, 0, 0.1)',
+                            // 确保背景色在 hover 时也能正确显示
+                            transition: 'background-color 0.15s ease-in-out'
                           }
                         : pinned === 'right'
                           ? {
                               position: 'sticky',
                               right: cellRightOffset,
-                              zIndex: 20, // 高于普通单元格，但低于表头固定列（z-30）
-                              backgroundColor: 'hsl(var(--background))' // 确保背景色正确
+                              zIndex: 20, // 高于普通单元格（z-0），但低于表头固定列（z-40）
+                              // 确保背景色始终存在且不透明，完全遮挡底层内容
+                              backgroundColor: fixedCellBackgroundColor,
+                              // 添加左侧阴影，视觉上区分固定列和非固定列
+                              boxShadow: '-2px 0 4px -2px rgba(0, 0, 0, 0.1)',
+                              // 确保背景色在 hover 时也能正确显示
+                              transition: 'background-color 0.15s ease-in-out'
                             }
                           : {};
 
@@ -1239,6 +1264,32 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                         }`}
                         style={cellStickyStyle}
                         title={rawError || undefined}
+                        onMouseEnter={
+                          pinned
+                            ? (e) => {
+                                // hover 时，如果未选中，使用 muted/40；如果已选中，使用 primary/20
+                                const hoverBg = isRowSelected
+                                  ? 'color-mix(in oklch, var(--primary) 20%, var(--background))'
+                                  : 'color-mix(in oklch, var(--muted) 40%, var(--background))';
+                                (
+                                  e.currentTarget as HTMLElement
+                                ).style.backgroundColor = hoverBg;
+                              }
+                            : undefined
+                        }
+                        onMouseLeave={
+                          pinned
+                            ? (e) => {
+                                // 离开时恢复原始背景色
+                                const originalBg = isRowSelected
+                                  ? 'color-mix(in oklch, var(--primary) 10%, var(--background))'
+                                  : 'var(--background)';
+                                (
+                                  e.currentTarget as HTMLElement
+                                ).style.backgroundColor = originalBg;
+                              }
+                            : undefined
+                        }
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
