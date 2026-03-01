@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useColumnSorting } from '../../src/hooks/useColumnSorting';
-import type { ReactDataGridStore } from '../../src/store';
-import type { DataGridControllerState } from '@maita-table/core';
+import { createDataGridStore, createInitialState } from '../../src/store';
+import type { ColumnConfig } from '@maita-table/core';
 
 interface Row {
   id: number;
@@ -10,77 +10,26 @@ interface Row {
   age: number;
 }
 
+const columns: ColumnConfig<Row>[] = [
+  { id: 'id', header: 'ID', accessor: (row) => row.id },
+  { id: 'name', header: 'Name', accessor: (row) => row.name },
+  { id: 'age', header: 'Age', accessor: (row) => row.age }
+];
+
 function createMockStore(
   initialSort: Array<{ id: string; desc: boolean }> = []
-): ReactDataGridStore<Row> {
-  let state: DataGridControllerState<Row> = {
-    view: {
-      columns: [],
-      sort: initialSort,
-      filters: [],
-      globalSearch: undefined,
-      groupBy: [],
-      paginationMode: 'page',
-      pageIndex: 0,
-      pageSize: 20,
-      density: 'comfortable'
-    },
-    runtime: {
-      loading: false,
-      selection: new Set(),
-      expandedRowKeys: new Set(),
-      editingDraftValues: {},
-      validationErrors: {},
-      scrollTop: 0,
-      scrollLeft: 0,
-      pendingEdits: [],
-      submission: {
-        status: 'idle',
-        submittedRows: [],
-        failedRows: []
-      },
-      rowValidationErrors: {}
-    },
-    data: {
-      rows: [],
-      totalRowCount: 0
-    }
-  };
-
-  const subscribers: Array<(state: DataGridControllerState<Row>) => void> = [];
-
-  return {
-    getState: () => state,
-    setState: (updater) => {
-      const nextState =
-        typeof updater === 'function' ? updater(state) : updater;
-      state = { ...state, ...nextState };
-      // Deep merge for nested objects
-      if (nextState.view) {
-        state.view = { ...state.view, ...nextState.view };
-        if (nextState.view.sort) {
-          state.view.sort = nextState.view.sort;
-        }
+) {
+  return createDataGridStore(
+    createInitialState(columns, {
+      view: {
+        sort: initialSort
       }
-      // Notify subscribers
-      subscribers.forEach((sub) => sub(state));
-    },
-    subscribe: (listener) => {
-      subscribers.push(listener);
-      return () => {
-        const index = subscribers.indexOf(listener);
-        if (index > -1) {
-          subscribers.splice(index, 1);
-        }
-      };
-    },
-    dispatch: vi.fn(),
-    controller: {} as any
-  } as unknown as ReactDataGridStore<Row>;
+    })
+  );
 }
 
 describe('useColumnSorting', () => {
-  let store: ReactDataGridStore<Row>;
+  let store: ReturnType<typeof createMockStore>;
 
   beforeEach(() => {
     store = createMockStore();
@@ -130,7 +79,7 @@ describe('useColumnSorting', () => {
     });
 
     it('应该从降序切换到取消排序', () => {
-      store = createMockStore([{ id: 'name', desc: true }]);
+      store = createMockStore([{ id: 'name', desc: true }] as any);
       const { result } = renderHook(() =>
         useColumnSorting({ store, enableMultiSort: false })
       );
@@ -144,7 +93,7 @@ describe('useColumnSorting', () => {
     });
 
     it('应该切换列时清除之前的排序', () => {
-      store = createMockStore([{ id: 'name', desc: false }]);
+      store = createMockStore([{ id: 'name', desc: false }] as any);
       const { result } = renderHook(() =>
         useColumnSorting({ store, enableMultiSort: false })
       );
@@ -280,7 +229,7 @@ describe('useColumnSorting', () => {
         { id: 'name', desc: false },
         { id: 'age', desc: true },
         { id: 'id', desc: false }
-      ]);
+      ] as any);
       const { result } = renderHook(() =>
         useColumnSorting({ store, enableMultiSort: true })
       );

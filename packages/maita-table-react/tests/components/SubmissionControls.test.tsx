@@ -1,65 +1,38 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { SubmissionControls } from '../../src/components/SubmissionControls';
-import type { ReactDataGridStore } from '../../src/store';
-import type { ColumnConfig, DataGridControllerState } from '@maita-table/core';
+import { createDataGridStore, createInitialState } from '../../src/store';
+import type { ColumnConfig, PendingEdit } from '@maita-table/core';
 
 interface Row {
   id: number;
   name: string;
 }
 
-function createMockStore(pendingCount: number = 0): ReactDataGridStore<Row> {
-  const state: DataGridControllerState<Row> = {
-    view: {
-      columns: [],
-      sort: [],
-      filters: [],
-      globalSearch: undefined,
-      groupBy: [],
-      paginationMode: 'page',
-      pageIndex: 0,
-      pageSize: 20,
-      density: 'comfortable'
-    },
-    runtime: {
-      loading: false,
-      selection: new Set(),
-      expandedRowKeys: new Set(),
-      editingDraftValues: {},
-      validationErrors: {},
-      scrollTop: 0,
-      scrollLeft: 0,
-      pendingEdits: Array.from({ length: pendingCount }, (_, i) => ({
-        rowKey: String(i),
-        rowIndex: i,
-        originalRow: { id: i, name: `Product ${i}` },
-        editedRow: { name: `New Name ${i}` },
-        timestamp: Date.now()
-      })),
-      submission: {
-        status: 'idle',
-        submittedRows: [],
-        failedRows: []
-      },
-      rowValidationErrors: {}
-    },
-    data: {
-      rows: [],
-      totalRowCount: 0
-    }
-  };
+const columns: ColumnConfig<Row>[] = [
+  { id: 'id', header: 'ID', accessor: (row) => row.id },
+  { id: 'name', header: 'Name', accessor: (row) => row.name }
+];
 
-  return {
-    getState: () => state,
-    setState: vi.fn(),
-    subscribe: vi.fn(() => () => {}),
-    controller: {
-      buildQuery: vi.fn(),
-      reduce: vi.fn((s) => s)
-    },
-    dispatch: vi.fn()
-  } as any;
+function createMockStore(pendingCount: number = 0) {
+  const pendingEdits: PendingEdit<Row>[] = Array.from(
+    { length: pendingCount },
+    (_, i) => ({
+      rowKey: String(i),
+      rowIndex: i,
+      originalRow: { id: i, name: `Product ${i}` },
+      editedRow: { name: `New Name ${i}` },
+      timestamp: Date.now()
+    })
+  );
+
+  return createDataGridStore(
+    createInitialState(columns, {
+      runtime: {
+        pendingEdits
+      }
+    })
+  );
 }
 
 describe('SubmissionControls', () => {
@@ -99,8 +72,8 @@ describe('SubmissionControls', () => {
 
   it('should disable submit button when submitting', () => {
     const mockStore = createMockStore(2);
-    const mockState = mockStore.getState();
-    mockState.runtime.submission.status = 'submitting';
+    // Set submission status to 'submitting'
+    mockStore.getState().startSubmission(['0', '1']);
     const mockOnSubmit = vi.fn().mockResolvedValue(undefined);
     const columns: ColumnConfig<Row>[] = [];
 

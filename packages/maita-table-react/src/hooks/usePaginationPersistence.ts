@@ -96,8 +96,9 @@ export function usePaginationPersistence(config: PaginationPersistenceConfig) {
       current.pagination.pageIndex !== saved.pageIndex ||
       current.pagination.pageSize !== saved.pageSize
     ) {
-      current.setPageIndex(saved.pageIndex);
+      // setPageSize 会重置 pageIndex 为 0，所以先设置 pageSize，再设置 pageIndex
       current.setPageSize(saved.pageSize);
+      current.setPageIndex(saved.pageIndex);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 仅在组件挂载时执行一次

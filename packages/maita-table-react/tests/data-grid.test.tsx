@@ -46,16 +46,19 @@ describe('<DataGrid />', () => {
         id='test-grid'
         columns={columns}
         dataSource={dataSource}
-        initialViewState={{ pageSize: 10000 }}
+        initialPageSize={10000}
       />
     );
 
-    expect(dataSource.fetch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        page: expect.objectContaining({ index: 0, size: 10000 })
-      }),
-      expect.anything()
-    );
+    // Wait for useEffect to call fetch
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(dataSource.fetch).toHaveBeenCalled();
+    const callArgs = (dataSource.fetch as ReturnType<typeof vi.fn>).mock
+      .calls[0];
+    const query = callArgs[0] as DataGridQuery;
+    expect(query.page).toMatchObject({ index: 0, size: 10000 });
+    expect(callArgs[1]).toBeInstanceOf(AbortSignal);
 
     expect(await screen.findByText('Alice')).toBeInTheDocument();
     expect(await screen.findByText('Bob')).toBeInTheDocument();

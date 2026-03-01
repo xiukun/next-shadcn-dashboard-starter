@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import type { ColumnConfig } from '@maita-table/core';
-import type { DataGridStore } from '../store/index';
+import type { DataGridStore } from '../store';
 import type { UseTableEventsResult } from './useTableEvents';
 import type { ColumnState } from './useColumnPersistence';
 
@@ -106,8 +106,12 @@ export function useColumnStateHandlers<Row>(
     const current = store.getState();
     current.setColumnsOrder(columns.map((col) => col.id));
     // 清除其他列状态
+    // 重置列宽度：设置为默认值（使用列定义中的默认宽度或 150）
     Object.keys(current.view.columnsWidth || {}).forEach((colId) => {
-      current.setColumnWidth(colId, undefined as any);
+      const column = columns.find((col) => col.id === colId);
+      const defaultWidth =
+        typeof column?.width === 'number' ? column.width : 150;
+      current.setColumnWidth(colId, defaultWidth);
     });
     Object.keys(current.view.columnsVisibility || {}).forEach((colId) => {
       current.setColumnVisibility(colId, true);

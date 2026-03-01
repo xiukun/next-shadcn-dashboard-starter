@@ -1,55 +1,50 @@
 import { describe, expect, it } from 'vitest';
-import { createDefaultController } from '@maita-table/core/src/controller';
-import type { DataGridControllerState } from '@maita-table/core/src/state';
-import { createDataGridStore } from '../src/store';
+import { createDataGridStore, createInitialState } from '../src/store';
+import type { ColumnConfig } from '@maita-table/core';
 
 interface Row {
   id: number;
   name: string;
 }
 
-function createInitialState(): DataGridControllerState<Row> {
-  return {
-    view: {
-      columns: [],
-      sort: [],
-      filters: [],
-      globalSearch: undefined,
-      groupBy: [],
-      paginationMode: 'page',
-      pageIndex: 0,
-      pageSize: 10,
-      density: 'comfortable'
-    },
-    runtime: {
-      loading: false,
-      selection: new Set(),
-      expandedRowKeys: new Set(),
-      validationErrors: {},
-      scrollTop: 0,
-      scrollLeft: 0
-    },
-    data: {
-      rows: [],
-      totalRowCount: 0
-    }
-  };
-}
+const columns: ColumnConfig<Row>[] = [
+  { id: 'id', header: 'ID', accessor: (row) => row.id },
+  { id: 'name', header: 'Name', accessor: (row) => row.name }
+];
 
 describe('createDataGridStore', () => {
-  it('updates state when dispatching events', () => {
-    const controller = createDefaultController<Row>();
-    const store = createDataGridStore<Row>({
-      initialState: createInitialState(),
-      controller
-    });
+  it('updates state when calling actions', () => {
+    const store = createDataGridStore(createInitialState(columns));
 
-    store.dispatch({
-      type: 'sort/change',
-      sort: [{ id: 'name', desc: false }]
-    });
+    // Test setSort action
+    store.getState().setSort([{ id: 'name', desc: false }]);
 
     const state = store.getState();
     expect(state.view.sort).toEqual([{ id: 'name', desc: false }]);
+  });
+
+  it('updates pagination state', () => {
+    const store = createDataGridStore(createInitialState(columns));
+
+    // Test pagination actions
+    // Note: setPageSize resets pageIndex to 0, so set pageSize first
+    store.getState().setPageSize(20);
+    store.getState().setPageIndex(2);
+
+    const state = store.getState();
+    expect(state.pagination.pageIndex).toBe(2);
+    expect(state.pagination.pageSize).toBe(20);
+  });
+
+  it('updates selection state', () => {
+    const store = createDataGridStore(createInitialState(columns));
+
+    // Test selection actions
+    store.getState().setSelection(new Set(['1', '2']));
+
+    const state = store.getState();
+    expect(state.runtime.selection.has('1')).toBe(true);
+    expect(state.runtime.selection.has('2')).toBe(true);
+    expect(state.runtime.selection.size).toBe(2);
   });
 });

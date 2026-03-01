@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useColumnFiltering } from '../../src/hooks/useColumnFiltering';
-import type { ReactDataGridStore } from '../../src/store';
-import type { DataGridControllerState, FilterState } from '@maita-table/core';
+import { createDataGridStore, createInitialState } from '../../src/store';
+import type { ColumnConfig, FilterState } from '@maita-table/core';
 
 interface Row {
   id: number;
@@ -11,77 +11,25 @@ interface Row {
   status: string;
 }
 
-function createMockStore(
-  initialFilters: FilterState = []
-): ReactDataGridStore<Row> {
-  let state: DataGridControllerState<Row> = {
-    view: {
-      columns: [],
-      sort: [],
-      filters: initialFilters,
-      globalSearch: undefined,
-      groupBy: [],
-      paginationMode: 'page',
-      pageIndex: 0,
-      pageSize: 20,
-      density: 'comfortable'
-    },
-    runtime: {
-      loading: false,
-      selection: new Set(),
-      expandedRowKeys: new Set(),
-      editingDraftValues: {},
-      validationErrors: {},
-      scrollTop: 0,
-      scrollLeft: 0,
-      pendingEdits: [],
-      submission: {
-        status: 'idle',
-        submittedRows: [],
-        failedRows: []
-      },
-      rowValidationErrors: {}
-    },
-    data: {
-      rows: [],
-      totalRowCount: 0
-    }
-  };
+const columns: ColumnConfig<Row>[] = [
+  { id: 'id', header: 'ID', accessor: (row) => row.id },
+  { id: 'name', header: 'Name', accessor: (row) => row.name },
+  { id: 'age', header: 'Age', accessor: (row) => row.age },
+  { id: 'status', header: 'Status', accessor: (row) => row.status }
+];
 
-  const subscribers: Array<(state: DataGridControllerState<Row>) => void> = [];
-
-  return {
-    getState: () => state,
-    setState: (updater) => {
-      const nextState =
-        typeof updater === 'function' ? updater(state) : updater;
-      state = { ...state, ...nextState };
-      // Deep merge for nested objects
-      if (nextState.view) {
-        state.view = { ...state.view, ...nextState.view };
-        if (nextState.view.filters) {
-          state.view.filters = nextState.view.filters;
-        }
+function createMockStore(initialFilters: FilterState = []) {
+  return createDataGridStore(
+    createInitialState(columns, {
+      view: {
+        filters: initialFilters
       }
-      // Notify subscribers
-      subscribers.forEach((sub) => sub(state));
-    },
-    subscribe: (listener) => {
-      subscribers.push(listener);
-      return () => {
-        const index = subscribers.indexOf(listener);
-        if (index > -1) {
-          subscribers.splice(index, 1);
-        }
-      };
-    },
-    dispatch: vi.fn(),
-    controller: {} as any
-  } as unknown as ReactDataGridStore<Row>;
+    })
+  );
 }
 
 describe('useColumnFiltering', () => {
-  let store: ReactDataGridStore<Row>;
+  let store: ReturnType<typeof createMockStore>;
 
   beforeEach(() => {
     store = createMockStore();

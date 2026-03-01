@@ -23,6 +23,9 @@ import { useColumnSorting } from './hooks/useColumnSorting';
 import { useColumnFiltering } from './hooks/useColumnFiltering';
 import { useColumnPersistence } from './hooks/useColumnPersistence';
 import { useColumnStateHandlers } from './hooks/useColumnStateHandlers';
+import { useColumnResize } from './hooks/useColumnResize';
+import { useEditableCellNavigation } from './hooks/useEditableCellNavigation';
+import { useTableInteraction } from './hooks/useTableInteraction';
 import { SubmissionControls } from './components/SubmissionControls';
 import { ColumnManagementPanel } from './components/ColumnManagementPanel';
 import { DataGridHeader } from './components/DataGridHeader';
@@ -271,63 +274,12 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
   }, [state.pagination.pageIndex, state.pagination.pageSize]);
 
   // 列宽自动调整
-  const handleColumnResize = React.useCallback(
-    (columnId: string) => {
-      const column = columns.find((col) => col.id === columnId);
-      if (!column) return;
-
-      // 测量表头宽度
-      const headerElement = document.querySelector(
-        `th[data-column-id="${columnId}"]`
-      ) as HTMLElement;
-      const headerWidth = headerElement?.offsetWidth || 0;
-
-      // 测量当前可见行的内容宽度
-      let maxCellWidth = 0;
-      const visibleRows = virtualItems.slice(
-        0,
-        Math.min(20, virtualItems.length)
-      );
-
-      visibleRows.forEach((virtualRow) => {
-        const row = table.getRowModel().rows[virtualRow.index];
-        if (!row) return;
-
-        const cell = row
-          .getVisibleCells()
-          .find((c) => c.column.id === columnId);
-        if (!cell) return;
-
-        // 创建临时元素测量文本宽度
-        const tempDiv = document.createElement('div');
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.visibility = 'hidden';
-        tempDiv.style.whiteSpace = 'nowrap';
-        tempDiv.style.fontSize = window.getComputedStyle(
-          headerElement || document.body
-        ).fontSize;
-        tempDiv.style.fontFamily = window.getComputedStyle(
-          headerElement || document.body
-        ).fontFamily;
-        tempDiv.textContent = String(cell.getValue() ?? '');
-        document.body.appendChild(tempDiv);
-        const cellWidth = tempDiv.offsetWidth;
-        document.body.removeChild(tempDiv);
-
-        maxCellWidth = Math.max(maxCellWidth, cellWidth);
-      });
-
-      // 计算新宽度
-      const padding = 24;
-      const newWidth = Math.max(headerWidth, maxCellWidth) + padding;
-      const minWidth = column.minWidth ?? 50;
-      const maxWidth = column.maxWidth ?? 1000;
-      const finalWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
-
-      columnHandlers.handleColumnWidthChange(columnId, finalWidth);
-    },
-    [columns, virtualItems, table, columnHandlers]
-  );
+  const { handleColumnResize } = useColumnResize({
+    columns,
+    table,
+    virtualItems,
+    onColumnWidthChange: columnHandlers.handleColumnWidthChange
+  });
 
   // 当前可见行
   const rows = table.getRowModel().rows;
@@ -344,61 +296,14 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
     currentPageRowKeys
   });
 
-  // 处理 tbody 点击
-  const handleTbodyClick = React.useCallback(
-    (e: React.MouseEvent<HTMLTableSectionElement>) => {
-      if (e.target === e.currentTarget) {
-        const current = store.getState();
-        if (current.runtime.editingCell) {
-          current.cancelEditing(current.runtime.editingCell);
-        }
-      }
-    },
-    [store]
-  );
+  // 表格交互处理
+  const { handleTbodyClick } = useTableInteraction({ store });
 
-  // 查找下一个可编辑单元格
-  const findNextEditableCellIndex = React.useCallback(
-    (
-      direction: 'next' | 'prev',
-      rowIndex: number,
-      columnIndex: number
-    ): { rowIndex: number; columnIndex: number } | null => {
-      const rows = table.getRowModel().rows;
-      const rowCount = rows.length;
-      const colCount = visibleColumns.all.length;
-
-      let r = rowIndex;
-      let c = columnIndex;
-
-      for (let steps = 0; steps < rowCount * colCount; steps++) {
-        if (direction === 'next') {
-          c++;
-          if (c >= colCount) {
-            c = 0;
-            r++;
-            if (r >= rowCount) return null;
-          }
-        } else {
-          c--;
-          if (c < 0) {
-            c = colCount - 1;
-            r--;
-            if (r < 0) return null;
-          }
-        }
-
-        const nextColumn = visibleColumns.all[c];
-        const meta = nextColumn.meta as ColumnMeta<Row> | undefined;
-        if (meta?.editable) {
-          return { rowIndex: r, columnIndex: c };
-        }
-      }
-
-      return null;
-    },
-    [table, visibleColumns.all]
-  );
+  // 可编辑单元格导航
+  const { findNextEditableCellIndex } = useEditableCellNavigation({
+    table,
+    visibleColumns: visibleColumns.all
+  });
 
   // 列 schema（用于验证）
   const columnSchemas = React.useMemo(() => {

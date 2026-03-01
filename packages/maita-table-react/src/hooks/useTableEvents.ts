@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import type { DataGridStore } from '../store/index';
+import type { DataGridStore } from '../store';
 
 export interface UseTableEventsOptions<Row> {
   store: DataGridStore<Row>;

@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useTableSubmission } from '../../src/hooks/useTableSubmission';
-import type { ReactDataGridStore } from '../../src/store';
-import type { ColumnConfig } from '@maita-table/core';
-import type { DataGridControllerState } from '@maita-table/core';
+import { createDataGridStore, createInitialState } from '../../src/store';
+import type { ColumnConfig, PendingEdit } from '@maita-table/core';
 
 interface Row {
   id: number;
@@ -11,63 +10,37 @@ interface Row {
   price: number;
 }
 
-function createMockStore(): ReactDataGridStore<Row> {
-  const state: DataGridControllerState<Row> = {
-    view: {
-      columns: [],
-      sort: [],
-      filters: [],
-      globalSearch: undefined,
-      groupBy: [],
-      paginationMode: 'page',
-      pageIndex: 0,
-      pageSize: 20,
-      density: 'comfortable'
-    },
-    runtime: {
-      loading: false,
-      selection: new Set(),
-      expandedRowKeys: new Set(),
-      editingDraftValues: {},
-      validationErrors: {},
-      scrollTop: 0,
-      scrollLeft: 0,
-      pendingEdits: [
-        {
-          rowKey: '1',
-          rowIndex: 0,
-          originalRow: { id: 1, name: 'Product 1', price: 100 },
-          editedRow: { name: 'New Name' },
-          timestamp: Date.now()
-        }
-      ],
-      submission: {
-        status: 'idle',
-        submittedRows: [],
-        failedRows: []
-      },
-      rowValidationErrors: {}
-    },
-    data: {
-      rows: [{ id: 1, name: 'Product 1', price: 100 }],
-      totalRowCount: 1
-    }
+const columns: ColumnConfig<Row>[] = [
+  { id: 'id', header: 'ID', accessor: (row) => row.id },
+  { id: 'name', header: 'Name', accessor: (row) => row.name },
+  { id: 'price', header: 'Price', accessor: (row) => row.price }
+];
+
+function createMockStore(pendingEdits: PendingEdit<Row>[] = []) {
+  const defaultPendingEdit: PendingEdit<Row> = {
+    rowKey: '1',
+    rowIndex: 0,
+    originalRow: { id: 1, name: 'Product 1', price: 100 },
+    editedRow: { name: 'New Name' },
+    timestamp: Date.now()
   };
 
-  return {
-    getState: () => state,
-    setState: vi.fn(),
-    subscribe: vi.fn(() => () => {}),
-    controller: {
-      buildQuery: vi.fn(),
-      reduce: vi.fn((s) => s)
-    },
-    dispatch: vi.fn()
-  } as any;
+  return createDataGridStore(
+    createInitialState(columns, {
+      runtime: {
+        pendingEdits:
+          pendingEdits.length > 0 ? pendingEdits : [defaultPendingEdit]
+      },
+      data: {
+        rows: [{ id: 1, name: 'Product 1', price: 100 }],
+        totalCount: 1
+      }
+    })
+  );
 }
 
 describe('useTableSubmission', () => {
-  let mockStore: ReactDataGridStore<Row>;
+  let mockStore: ReturnType<typeof createMockStore>;
   let mockOnSubmit: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -123,17 +96,14 @@ describe('useTableSubmission', () => {
     ];
 
     // 创建一个新的 store，其中 pendingEdit 将 name 设置为空字符串（验证失败）
-    const invalidStore = createMockStore();
-    const invalidState = invalidStore.getState();
-    invalidState.runtime.pendingEdits = [
-      {
-        rowKey: '1',
-        rowIndex: 0,
-        originalRow: { id: 1, name: 'Product 1', price: 100 },
-        editedRow: { name: '' }, // 空字符串，验证应该失败
-        timestamp: Date.now()
-      }
-    ];
+    const invalidPendingEdit: PendingEdit<Row> = {
+      rowKey: '1',
+      rowIndex: 0,
+      originalRow: { id: 1, name: 'Product 1', price: 100 },
+      editedRow: { name: '' }, // 空字符串，验证应该失败
+      timestamp: Date.now()
+    };
+    const invalidStore = createMockStore([invalidPendingEdit]);
 
     const { result } = renderHook(() =>
       useTableSubmission({

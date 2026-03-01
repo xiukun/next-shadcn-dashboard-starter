@@ -1,77 +1,35 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useSelectionPersistence } from '../../src/hooks/useSelectionPersistence';
-import type { ReactDataGridStore } from '../../src/store';
-import type { DataGridControllerState, RowKey } from '@maita-table/core';
+import { createDataGridStore, createInitialState } from '../../src/store';
+import type { ColumnConfig, RowKey } from '@maita-table/core';
 
 interface Row {
   id: number;
   name: string;
 }
 
-function createMockStore(
-  initialSelection: RowKey[] = []
-): ReactDataGridStore<Row> {
-  const state: DataGridControllerState<Row> = {
-    view: {
-      columns: [],
-      sort: [],
-      filters: [],
-      globalSearch: undefined,
-      groupBy: [],
-      paginationMode: 'page',
-      pageIndex: 0,
-      pageSize: 20,
-      density: 'comfortable'
-    },
-    runtime: {
-      loading: false,
-      selection: new Set(initialSelection),
-      expandedRowKeys: new Set(),
-      editingDraftValues: {},
-      validationErrors: {},
-      scrollTop: 0,
-      scrollLeft: 0,
-      pendingEdits: [],
-      submission: {
-        status: 'idle',
-        submittedRows: [],
-        failedRows: []
+const columns: ColumnConfig<Row>[] = [
+  { id: 'id', header: 'ID', accessor: (row) => row.id },
+  { id: 'name', header: 'Name', accessor: (row) => row.name }
+];
+
+function createMockStore(initialSelection: RowKey[] = []) {
+  return createDataGridStore(
+    createInitialState(columns, {
+      runtime: {
+        selection: new Set(initialSelection)
       },
-      rowValidationErrors: {}
-    },
-    data: {
-      rows: [
-        { id: 1, name: 'Row 1' },
-        { id: 2, name: 'Row 2' },
-        { id: 3, name: 'Row 3' }
-      ],
-      totalRowCount: 3
-    }
-  };
-
-  const subscribers: Array<(state: DataGridControllerState<Row>) => void> = [];
-
-  return {
-    getState: vi.fn(() => state),
-    setState: vi.fn((updater) => {
-      const nextState =
-        typeof updater === 'function' ? updater(state) : updater;
-      Object.assign(state, nextState);
-      // Notify subscribers
-      subscribers.forEach((sub) => sub(state));
-    }),
-    dispatch: vi.fn(),
-    subscribe: vi.fn((callback) => {
-      subscribers.push(callback);
-      return () => {
-        const index = subscribers.indexOf(callback);
-        if (index > -1) {
-          subscribers.splice(index, 1);
-        }
-      };
+      data: {
+        rows: [
+          { id: 1, name: 'Row 1' },
+          { id: 2, name: 'Row 2' },
+          { id: 3, name: 'Row 3' }
+        ],
+        totalCount: 3
+      }
     })
-  } as unknown as ReactDataGridStore<Row>;
+  );
 }
 
 describe('useSelectionPersistence', () => {
@@ -100,12 +58,8 @@ describe('useSelectionPersistence', () => {
       );
 
       // Update selection
-      store.setState({
-        ...store.getState(),
-        runtime: {
-          ...store.getState().runtime,
-          selection: new Set<RowKey>(['1', '2'])
-        }
+      act(() => {
+        store.getState().setSelection(new Set<RowKey>(['1', '2']));
       });
 
       await waitFor(() => {
@@ -153,12 +107,8 @@ describe('useSelectionPersistence', () => {
       );
 
       // Clear selection
-      store.setState({
-        ...store.getState(),
-        runtime: {
-          ...store.getState().runtime,
-          selection: new Set<RowKey>()
-        }
+      act(() => {
+        store.getState().clearSelection();
       });
 
       await waitFor(() => {
@@ -226,12 +176,8 @@ describe('useSelectionPersistence', () => {
       );
 
       // Update selection
-      store.setState({
-        ...store.getState(),
-        runtime: {
-          ...store.getState().runtime,
-          selection: new Set<RowKey>(['1', '2'])
-        }
+      act(() => {
+        store.getState().setSelection(new Set<RowKey>(['1', '2']));
       });
 
       await waitFor(() => {
@@ -243,7 +189,7 @@ describe('useSelectionPersistence', () => {
       localStorage.setItem(storageKey, JSON.stringify(['1', '2']));
 
       const store = createMockStore();
-      const setStateSpy = vi.spyOn(store, 'setState');
+      const setSelectionSpy = vi.spyOn(store.getState(), 'setSelection');
 
       renderHook(() =>
         useSelectionPersistence({
@@ -256,8 +202,8 @@ describe('useSelectionPersistence', () => {
       // Wait a bit to ensure no load happens
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // setState should not be called for restoration
-      expect(setStateSpy).not.toHaveBeenCalled();
+      // setSelection should not be called for restoration
+      expect(setSelectionSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -304,12 +250,8 @@ describe('useSelectionPersistence', () => {
       );
 
       // Update selection (should not crash)
-      store.setState({
-        ...store.getState(),
-        runtime: {
-          ...store.getState().runtime,
-          selection: new Set<RowKey>(['1'])
-        }
+      act(() => {
+        store.getState().setSelection(new Set<RowKey>(['1']));
       });
 
       // Should log warning but not crash

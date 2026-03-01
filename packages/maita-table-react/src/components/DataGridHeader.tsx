@@ -9,7 +9,7 @@ import { FloatingFilter } from './FloatingFilter';
 import { FilterPopover } from './FilterPopover';
 import { ColumnMenu, type ColumnMenuLabels } from './ColumnMenu';
 import { HeaderSelectionCheckbox } from './SelectionCheckbox';
-import type { DataGridStore } from '../store/index';
+import type { DataGridStore } from '../store';
 import type {
   UseColumnSortingResult,
   UseColumnFilteringResult

@@ -2,25 +2,25 @@
 
 import * as React from 'react';
 import { flexRender } from '@tanstack/react-table';
-import type { Cell, Row } from '@tanstack/react-table';
+import type { Cell, Row as TanStackRow } from '@tanstack/react-table';
 import type { ColumnConfig, ColumnMeta, RowKey } from '@maita-table/core';
 import { createColumnSchema } from '@maita-table/core';
 import { NumberCell } from '../cells/number-cell';
 import { TextCell } from '../cells/text-cell';
 import { CheckboxCell } from '../cells/checkbox-cell';
-import type { DataGridStore } from '../store/index';
+import type { DataGridStore } from '../store';
 import { useDebouncedCallback } from '../hooks/useDebounce';
 import { useThrottledCallback } from '../hooks/useThrottle';
 import type { EditMode } from '../DataGrid';
 
-export interface DataGridCellProps<Row> {
-  cell: Cell<Row, unknown>;
-  row: Row<Row>;
+export interface DataGridCellProps<TRow> {
+  cell: Cell<TRow, unknown>;
+  row: TanStackRow<TRow>;
   cellIndex: number;
-  column: ColumnConfig<Row>;
-  allVisibleColumns: ColumnConfig<Row>[];
-  rows: Row<Row>[];
-  store: DataGridStore<Row>;
+  column: ColumnConfig<TRow>;
+  allVisibleColumns: ColumnConfig<TRow>[];
+  rows: TanStackRow<TRow>[];
+  store: DataGridStore<TRow>;
   columnSchemas: Record<string, unknown>;
   editMode: EditMode;
   isRowSelected: boolean;
@@ -32,7 +32,7 @@ export interface DataGridCellProps<Row> {
   ) => { rowIndex: number; columnIndex: number } | null;
 }
 
-export function DataGridCell<Row>(props: DataGridCellProps<Row>) {
+export function DataGridCell<TRow>(props: DataGridCellProps<TRow>) {
   const {
     cell,
     row,
@@ -49,13 +49,14 @@ export function DataGridCell<Row>(props: DataGridCellProps<Row>) {
   } = props;
 
   const columnId = cell.column.id;
-  const meta = cell.column.columnDef.meta as ColumnMeta<Row> | undefined;
+  const meta = cell.column.columnDef.meta as ColumnMeta<TRow> | undefined;
   const rowKey = row.id;
   const cellKey = `${rowKey}:${columnId}`;
 
   const state = store.getState();
   const viewState = state.view;
   const pinned = viewState.columnsPinned?.[columnId];
+  const width = viewState.columnsWidth?.[columnId];
 
   // 计算当前单元格之前的左固定列宽度
   let cellLeftOffset = enableRowSelection ? 48 : 0;
@@ -99,9 +100,18 @@ export function DataGridCell<Row>(props: DataGridCellProps<Row>) {
     ? 'color-mix(in oklch, var(--primary) 10%, var(--background))'
     : 'var(--background)';
 
+  // 获取列的实际宽度（用于固定列宽度设置）
+  // 对于固定列，需要设置宽度以确保与表头对齐
+  // 优先使用手动调整的宽度，其次使用列配置的宽度，最后使用默认宽度150px
+  const columnWidth =
+    width ?? (typeof column.width === 'number' ? column.width : 150);
+
   const cellStickyStyle: React.CSSProperties =
     pinned === 'left'
       ? {
+          width: columnWidth,
+          minWidth: columnWidth,
+          maxWidth: columnWidth,
           position: 'sticky',
           left: cellLeftOffset,
           zIndex: 20,
@@ -111,6 +121,9 @@ export function DataGridCell<Row>(props: DataGridCellProps<Row>) {
         }
       : pinned === 'right'
         ? {
+            width: columnWidth,
+            minWidth: columnWidth,
+            maxWidth: columnWidth,
             position: 'sticky',
             right: cellRightOffset,
             zIndex: 20,

@@ -1,74 +1,36 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useRowSelection } from '../../src/hooks/useRowSelection';
-import type { ReactDataGridStore } from '../../src/store';
-import type { DataGridControllerState, RowKey } from '@maita-table/core';
+import { createDataGridStore, createInitialState } from '../../src/store';
+import type { ColumnConfig } from '@maita-table/core';
 
 interface Row {
   id: number;
   name: string;
 }
 
-function createMockStore(): ReactDataGridStore<Row> {
-  let state: DataGridControllerState<Row> = {
-    view: {
-      columns: [],
-      sort: [],
-      filters: [],
-      globalSearch: undefined,
-      groupBy: [],
-      paginationMode: 'page',
-      pageIndex: 0,
-      pageSize: 20,
-      density: 'comfortable'
-    },
-    runtime: {
-      loading: false,
-      selection: new Set<RowKey>(),
-      expandedRowKeys: new Set(),
-      editingDraftValues: {},
-      validationErrors: {},
-      scrollTop: 0,
-      scrollLeft: 0,
-      pendingEdits: [],
-      submission: {
-        status: 'idle',
-        submittedRows: [],
-        failedRows: []
-      },
-      rowValidationErrors: {}
-    },
-    data: {
-      rows: [
-        { id: 1, name: 'Row 1' },
-        { id: 2, name: 'Row 2' },
-        { id: 3, name: 'Row 3' }
-      ],
-      totalRowCount: 3
-    }
-  };
+const columns: ColumnConfig<Row>[] = [
+  { id: 'id', header: 'ID', accessor: (row) => row.id },
+  { id: 'name', header: 'Name', accessor: (row) => row.name }
+];
 
-  return {
-    getState: () => state,
-    setState: (updater) => {
-      const nextState =
-        typeof updater === 'function' ? updater(state) : updater;
-      state = { ...state, ...nextState };
-      // Deep merge for nested objects
-      if (nextState.runtime) {
-        state.runtime = { ...state.runtime, ...nextState.runtime };
-        if (nextState.runtime.selection) {
-          state.runtime.selection = nextState.runtime.selection;
-        }
+function createMockStore() {
+  return createDataGridStore(
+    createInitialState(columns, {
+      data: {
+        rows: [
+          { id: 1, name: 'Row 1' },
+          { id: 2, name: 'Row 2' },
+          { id: 3, name: 'Row 3' }
+        ],
+        totalCount: 3
       }
-    },
-    dispatch: vi.fn(),
-    subscribe: vi.fn(() => vi.fn())
-  } as unknown as ReactDataGridStore<Row>;
+    })
+  );
 }
 
 describe('useRowSelection', () => {
-  let store: ReactDataGridStore<Row>;
+  let store: ReturnType<typeof createMockStore>;
   let onSelectionChange: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {

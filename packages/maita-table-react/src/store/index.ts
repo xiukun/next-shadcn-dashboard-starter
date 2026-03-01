@@ -1,14 +1,5 @@
 import { create } from 'zustand';
-import type {
-  ColumnConfig,
-  DataGridResult,
-  EditCell,
-  GroupState,
-  RowKey,
-  SortState,
-  SubmissionState
-} from '@maita-table/core';
-import type { DataGridQuery } from '@maita-table/core';
+import type { ColumnConfig, RowKey } from '@maita-table/core';
 import type { DataGridStoreState } from './types';
 import { createViewSlice, type ViewSlice } from './slices/viewSlice';
 import { createRuntimeSlice, type RuntimeSlice } from './slices/runtimeSlice';

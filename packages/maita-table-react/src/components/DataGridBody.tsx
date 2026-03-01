@@ -5,7 +5,7 @@ import type { Row, Cell } from '@tanstack/react-table';
 import type { ColumnConfig, RowKey } from '@maita-table/core';
 import { SelectionCheckbox } from './SelectionCheckbox';
 import { DataGridCell } from './DataGridCell';
-import type { DataGridStore } from '../store/index';
+import type { DataGridStore } from '../store';
 import type { EditMode } from '../DataGrid';
 import type { UseRowSelectionResult } from '../hooks/useRowSelection';
 
