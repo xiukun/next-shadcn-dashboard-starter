@@ -189,6 +189,12 @@ export default function Page() {
           enableRowSelection={true}
           selectionMode='multiple'
           enableSelectionPersistence={true}
+          // 开启分页示例：服务端分页 + 分页控件
+          enablePagination={true}
+          paginationMode='server'
+          initialPageIndex={0}
+          initialPageSize={10}
+          pageSizeOptions={[10, 20, 50]}
           columnMenuLabels={{
             sortAsc: t('columnMenu.sortAsc'),
             sortDesc: t('columnMenu.sortDesc'),

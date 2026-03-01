@@ -101,7 +101,7 @@ export function useDataGrid<Row>(
     let aborted = false;
     const current = store.getState();
 
-    // 构建查询
+    // 构建查询（包含排序、过滤、分组和分页信息）
     const query: DataGridQuery = {
       sort: current.view.sort,
       filters: current.view.filters,
@@ -121,10 +121,24 @@ export function useDataGrid<Row>(
       .fetch(query, abortController.signal)
       .then((result: DataGridResult<Row>) => {
         if (aborted) return;
-        store.getState().setRows(result.rows);
-        if (result.totalRowCount !== undefined) {
-          store.getState().setTotalCount(result.totalRowCount);
+
+        // 更新数据行
+        const apiRows = result.rows ?? [];
+        store.getState().setRows(apiRows);
+
+        // 兼容 totalRowCount / totalCount 两种命名
+        const total =
+          result.totalRowCount ??
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (result as any)?.totalCount;
+
+        if (typeof total === 'number') {
+          // Data 部分总数（可用于展示）
+          store.getState().setTotalCount(total);
+          // 分页部分总数（用于计算 pageCount 和分页边界）
+          store.getState().setRowCount(total);
         }
+
         store.getState().setLoading(false);
       })
       .catch(() => {
@@ -136,7 +150,16 @@ export function useDataGrid<Row>(
       aborted = true;
       abortController.abort();
     };
-  }, [dataSource, store]);
+  }, [
+    dataSource,
+    store,
+    state.view.sort,
+    state.view.filters,
+    state.view.globalSearch,
+    state.view.groupBy,
+    state.pagination.pageIndex,
+    state.pagination.pageSize
+  ]);
 
   // 挂载后再加载并应用本地持久化的列视图状态（列顺序/宽度/可见性/固定等）
   // 这样可以保证：

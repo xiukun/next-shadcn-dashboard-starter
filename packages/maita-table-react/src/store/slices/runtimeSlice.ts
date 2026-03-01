@@ -54,9 +54,33 @@ export const createRuntimeSlice: StateCreator<
   RuntimeSlice
 > = (set, get) => ({
   setSelection: (selection) =>
-    set((state) => ({
-      runtime: { ...state.runtime, selection }
-    })),
+    set((state) => {
+      // 避免不必要的更新：在大数据量场景下，仅做一次线性遍历，不创建中间数组
+      const currentSelection = state.runtime.selection;
+
+      // 引用相同直接跳过
+      if (currentSelection === selection) {
+        return state;
+      }
+
+      if (currentSelection.size === selection.size) {
+        // 使用 forEach 兼容较低 target 配置
+        let isSame = true;
+        currentSelection.forEach((key) => {
+          if (isSame && !selection.has(key)) {
+            isSame = false;
+          }
+        });
+        if (isSame) {
+          // 选择集内容相同，不更新状态
+          return state;
+        }
+      }
+
+      return {
+        runtime: { ...state.runtime, selection }
+      };
+    }),
 
   toggleRowSelection: (rowKey) =>
     set((state) => {

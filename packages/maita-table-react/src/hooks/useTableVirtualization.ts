@@ -18,7 +18,7 @@ export interface UseTableVirtualizationOptions<Row> {
   /**
    * 滚动容器 ref
    */
-  scrollElementRef?: React.RefObject<HTMLDivElement>;
+  scrollElementRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export interface UseTableVirtualizationResult<Row> {

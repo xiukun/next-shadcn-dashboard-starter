@@ -30,7 +30,11 @@ export type DataGridStore<Row = any> = ReturnType<
  */
 export function createInitialState<Row = any>(
   columns: ColumnConfig<Row>[],
-  initialData?: Partial<DataGridStoreState<Row>>
+  initialData?: Partial<
+    Omit<DataGridStoreState<Row>, 'view'> & {
+      view: Partial<Omit<DataGridStoreState<Row>['view'], 'columns'>>;
+    }
+  >
 ): DataGridStoreState<Row> {
   return {
     view: {

@@ -48,12 +48,9 @@ export function SelectionCheckbox(props: SelectionCheckboxProps) {
         <div suppressHydrationWarning>
           <CheckboxComponent
             checked={isMounted ? isSelected : false}
-            onCheckedChange={(checked) => {
-              // CheckboxComponent 的 onCheckedChange 接收 boolean，但我们不需要事件对象
-              if (checked !== isSelected) {
-                onToggle();
-              }
-            }}
+            // 由外层 <td> 的 onClick 统一处理选中逻辑（支持 Shift 范围选择）
+            // 这里提供一个空实现即可，避免受控组件发出警告
+            onCheckedChange={() => {}}
           />
         </div>
       );
@@ -97,10 +94,6 @@ export function SelectionCheckbox(props: SelectionCheckboxProps) {
         // 确保背景色在 hover 时也能正确显示
         transition: 'background-color 0.15s ease-in-out'
       }}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role='gridcell'
-      tabIndex={0}
       onMouseEnter={(e) => {
         // hover 时，如果未选中，使用 muted/40；如果已选中，使用 primary/20
         const hoverBg = isSelected
@@ -114,7 +107,15 @@ export function SelectionCheckbox(props: SelectionCheckboxProps) {
           baseBackgroundColor;
       }}
     >
-      <div className='flex items-center justify-center'>{renderCheckbox()}</div>
+      <div
+        className='flex h-full w-full items-center justify-center'
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        role='gridcell'
+        tabIndex={0}
+      >
+        {renderCheckbox()}
+      </div>
     </td>
   );
 }
@@ -169,7 +170,9 @@ export function HeaderSelectionCheckbox(props: HeaderSelectionCheckboxProps) {
             aria-checked={
               isMounted ? (isIndeterminate ? 'mixed' : isAllSelected) : false
             }
-            onCheckedChange={onToggleAll}
+            // 由外层 <th> 的 onClick 统一处理选中逻辑
+            // 这里提供一个空实现即可，避免受控组件发出警告
+            onCheckedChange={() => {}}
           />
         </div>
       );
@@ -185,7 +188,7 @@ export function HeaderSelectionCheckbox(props: HeaderSelectionCheckboxProps) {
             el.indeterminate = isIndeterminate;
           }
         }}
-        onChange={onToggleAll}
+        onChange={() => {}} // 由外层 th 的 onClick 处理
         className='border-input size-4 cursor-pointer rounded'
         aria-checked={
           isMounted ? (isIndeterminate ? 'mixed' : isAllSelected) : false
@@ -213,23 +216,13 @@ export function HeaderSelectionCheckbox(props: HeaderSelectionCheckboxProps) {
         // 确保点击事件不会穿透
         pointerEvents: 'auto'
       }}
-      onClick={(e) => {
-        // 阻止事件冒泡，确保点击的是表头checkbox而不是下面的行
-        e.stopPropagation();
-        handleClick(e);
-      }}
+      onClick={handleClick}
       onKeyDown={handleKeyDown}
       role='columnheader'
       tabIndex={0}
       aria-label={isAllSelected ? 'Deselect all' : 'Select all'}
     >
-      <div
-        className='flex items-center justify-center'
-        onClick={(e) => {
-          // 在内部div也阻止冒泡，双重保险
-          e.stopPropagation();
-        }}
-      >
+      <div className='flex h-full w-full items-center justify-center'>
         {renderCheckbox()}
       </div>
     </th>
