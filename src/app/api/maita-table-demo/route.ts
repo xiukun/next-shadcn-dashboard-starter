@@ -7,17 +7,25 @@ type DemoRow = {
   price: number;
   change: number; // 变化率，-1.0 ~ 1.0
   status: 'active' | 'archived';
+  createdAt?: string; // 创建日期
 };
 
 const TOTAL = 10000;
 
 function makeRow(id: number): DemoRow {
+  // 生成随机日期（过去30天内）
+  const daysAgo = id % 30;
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  const createdAt = date.toISOString().split('T')[0];
+
   return {
     id,
     name: `Row ${id}`,
     price: (id % 1000) / 10,
     change: ((id % 21) - 10) / 10, // -1.0 ~ 1.0，包含负数与正数
-    status: id % 10 === 0 ? 'archived' : 'active'
+    status: id % 10 === 0 ? 'archived' : 'active',
+    createdAt
   };
 }
 

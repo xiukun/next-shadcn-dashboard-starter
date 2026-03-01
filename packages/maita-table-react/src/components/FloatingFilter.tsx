@@ -56,7 +56,7 @@ export function FloatingFilter(props: FloatingFilterProps) {
   const [localValue, setLocalValue] = React.useState(controlledValue || '');
 
   React.useEffect(() => {
-    if (controlledValue !== undefined) {
+    if (controlledValue !== undefined && controlledValue !== localValue) {
       setLocalValue(controlledValue);
     }
   }, [controlledValue]);
@@ -65,10 +65,12 @@ export function FloatingFilter(props: FloatingFilterProps) {
   const debouncedValue = useDebounce(localValue, 300);
 
   React.useEffect(() => {
+    // 只有当防抖后的值与当前值不同时才触发更新
     if (debouncedValue !== controlledValue) {
       onValueChange(debouncedValue);
     }
-  }, [debouncedValue, onValueChange, controlledValue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedValue]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;

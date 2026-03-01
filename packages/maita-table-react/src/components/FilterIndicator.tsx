@@ -18,11 +18,15 @@ export interface FilterIndicatorProps {
   className?: string;
 }
 
-export function FilterIndicator(props: FilterIndicatorProps) {
+export const FilterIndicator = React.forwardRef<
+  HTMLButtonElement,
+  FilterIndicatorProps
+>((props, ref) => {
   const { hasFilter, onClick, className } = props;
 
   return (
     <button
+      ref={ref}
       type='button'
       onClick={onClick}
       className={cn(
@@ -51,4 +55,6 @@ export function FilterIndicator(props: FilterIndicatorProps) {
       )}
     </button>
   );
-}
+});
+
+FilterIndicator.displayName = 'FilterIndicator';

@@ -33,6 +33,7 @@ import { useColumnSorting } from './hooks/useColumnSorting';
 import { useColumnFiltering } from './hooks/useColumnFiltering';
 import { ColumnHeader } from './components/ColumnHeader';
 import { FloatingFilter } from './components/FloatingFilter';
+import { FilterPopover } from './components/FilterPopover';
 import type { RowKey } from '@maita-table/core';
 
 export type EditMode = 'immediate' | 'single-row' | 'batch';
@@ -130,6 +131,11 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
   const filtering = useColumnFiltering({
     store
   });
+
+  // 过滤菜单打开状态（按列 ID 存储）
+  const [filterMenuOpenMap, setFilterMenuOpenMap] = React.useState<
+    Record<string, boolean>
+  >({});
 
   // 记录上次选中的行（用于范围选择）
   const lastSelectedRowKeyRef = React.useRef<RowKey | null>(null);
@@ -244,16 +250,17 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
         desc: s.desc
       })) || []
     );
-    // 将过滤状态转换为 TanStack Table 格式
-    const tanStackColumnFilters = React.useMemo(() => {
-      return (
-        state.view.filters?.map((f) => ({
-          id: f.id,
-          value: f.value
-        })) || []
-      );
-    }, [state.view.filters]);
   }, [state.view.sort]);
+
+  // 将过滤状态转换为 TanStack Table 格式
+  const tanStackColumnFilters = React.useMemo(() => {
+    return (
+      state.view.filters?.map((f) => ({
+        id: f.id,
+        value: f.value
+      })) || []
+    );
+  }, [state.view.filters]);
 
   const table = useReactTable({
     data: state.data.rows,
@@ -644,84 +651,98 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
         <table className='mt-grid-table w-full'>
           <thead className='mt-grid-thead bg-muted/40 sticky top-0 z-10 backdrop-blur'>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className='mt-grid-tr border-b'>
-                {/* 选择列的表头 checkbox */}
-                {enableRowSelection && (
-                  <HeaderSelectionCheckbox
-                    allRowKeys={currentPageRowKeys}
-                    selection={selection}
-                    onToggleAll={handleToggleAll}
-                    CheckboxComponent={CheckboxComponent}
-                  />
-                )}
-                {headerGroup.headers.map((header, headerIndex) => {
-                  const columnId = header.column.id;
-                  const viewState = state.view;
-                  const width = viewState.columnsWidth?.[columnId];
-                  const pinned = viewState.columnsPinned?.[columnId];
-                  const column = allVisibleColumns.find(
-                    (c) => c.id === columnId
-                  );
+              <React.Fragment key={headerGroup.id}>
+                <tr className='mt-grid-tr border-b'>
+                  {/* 选择列的表头 checkbox */}
+                  {enableRowSelection && (
+                    <HeaderSelectionCheckbox
+                      allRowKeys={currentPageRowKeys}
+                      selection={selection}
+                      onToggleAll={handleToggleAll}
+                      CheckboxComponent={CheckboxComponent}
+                    />
+                  )}
+                  {headerGroup.headers.map((header, headerIndex) => {
+                    const columnId = header.column.id;
+                    const viewState = state.view;
+                    const width = viewState.columnsWidth?.[columnId];
+                    const pinned = viewState.columnsPinned?.[columnId];
+                    const column = allVisibleColumns.find(
+                      (c) => c.id === columnId
+                    );
 
-                  // 计算当前列之前的左固定列宽度
-                  // 如果启用了行选择，选择列（48px）是最左侧的固定列
-                  let leftOffset = enableRowSelection ? 48 : 0;
-                  for (let i = 0; i < headerIndex; i++) {
-                    const prevHeader = headerGroup.headers[i];
-                    if (prevHeader) {
-                      const prevPinned =
-                        viewState.columnsPinned?.[prevHeader.column.id];
-                      if (prevPinned === 'left') {
-                        const prevCol = allVisibleColumns.find(
-                          (c) => c.id === prevHeader.column.id
-                        );
-                        const prevWidth =
-                          viewState.columnsWidth?.[prevHeader.column.id] ??
-                          (typeof prevCol?.width === 'number'
-                            ? prevCol.width
-                            : 150);
-                        leftOffset +=
-                          typeof prevWidth === 'number' ? prevWidth : 150;
+                    // 计算当前列之前的左固定列宽度
+                    // 如果启用了行选择，选择列（48px）是最左侧的固定列
+                    let leftOffset = enableRowSelection ? 48 : 0;
+                    for (let i = 0; i < headerIndex; i++) {
+                      const prevHeader = headerGroup.headers[i];
+                      if (prevHeader) {
+                        const prevPinned =
+                          viewState.columnsPinned?.[prevHeader.column.id];
+                        if (prevPinned === 'left') {
+                          const prevCol = allVisibleColumns.find(
+                            (c) => c.id === prevHeader.column.id
+                          );
+                          const prevWidth =
+                            viewState.columnsWidth?.[prevHeader.column.id] ??
+                            (typeof prevCol?.width === 'number'
+                              ? prevCol.width
+                              : 150);
+                          leftOffset +=
+                            typeof prevWidth === 'number' ? prevWidth : 150;
+                        }
                       }
                     }
-                  }
 
-                  // 计算当前列之后的右固定列宽度
-                  let rightOffset = 0;
-                  for (
-                    let i = headerIndex + 1;
-                    i < headerGroup.headers.length;
-                    i++
-                  ) {
-                    const nextHeader = headerGroup.headers[i];
-                    if (nextHeader) {
-                      const nextPinned =
-                        viewState.columnsPinned?.[nextHeader.column.id];
-                      if (nextPinned === 'right') {
-                        const nextCol = allVisibleColumns.find(
-                          (c) => c.id === nextHeader.column.id
-                        );
-                        const nextWidth =
-                          viewState.columnsWidth?.[nextHeader.column.id] ??
-                          (typeof nextCol?.width === 'number'
-                            ? nextCol.width
-                            : 150);
-                        rightOffset +=
-                          typeof nextWidth === 'number' ? nextWidth : 150;
+                    // 计算当前列之后的右固定列宽度
+                    let rightOffset = 0;
+                    for (
+                      let i = headerIndex + 1;
+                      i < headerGroup.headers.length;
+                      i++
+                    ) {
+                      const nextHeader = headerGroup.headers[i];
+                      if (nextHeader) {
+                        const nextPinned =
+                          viewState.columnsPinned?.[nextHeader.column.id];
+                        if (nextPinned === 'right') {
+                          const nextCol = allVisibleColumns.find(
+                            (c) => c.id === nextHeader.column.id
+                          );
+                          const nextWidth =
+                            viewState.columnsWidth?.[nextHeader.column.id] ??
+                            (typeof nextCol?.width === 'number'
+                              ? nextCol.width
+                              : 150);
+                          rightOffset +=
+                            typeof nextWidth === 'number' ? nextWidth : 150;
+                        }
                       }
                     }
-                  }
 
-                  if (!column) {
-                    return null;
+                    if (!column) {
+                      return null;
+                    }
+
+                    const sortDirection = sorting.getSortDirection(columnId);
+                    const sortPriority = sorting.getSortPriority(columnId);
                     const hasFilter = filtering.hasFilter(columnId);
                     const meta = column.meta;
                     const enableFloatingFilter =
                       meta?.enableFloatingFilter ?? false;
+                    const filterType =
+                      (meta?.filterType as 'text' | 'number' | 'date') ||
+                      'text';
+                    const filterMenuOpen = filterMenuOpenMap[columnId] || false;
+                    const setFilterMenuOpen = (open: boolean) => {
+                      setFilterMenuOpenMap((prev) => ({
+                        ...prev,
+                        [columnId]: open
+                      }));
+                    };
 
                     // 处理浮动过滤器值变化（使用防抖）
                     const handleFloatingFilterChange = (value: string) => {
-                      const filterType = meta?.filterType || 'text';
                       let operator: 'contains' | 'gt' | 'lt' | 'eq' =
                         'contains';
                       if (filterType === 'number') {
@@ -731,14 +752,10 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                       }
                       filtering.setFilter(columnId, operator, value);
                     };
-                  }
 
-                  const sortDirection = sorting.getSortDirection(columnId);
-                  const sortPriority = sorting.getSortPriority(columnId);
-
-                  return (
-                    <React.Fragment key={header.id}>
+                    return (
                       <ColumnHeader
+                        key={header.id}
                         column={column}
                         header={
                           header.isPlaceholder
@@ -762,37 +779,185 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                         }
                         hasFilter={hasFilter}
                         onFilterClick={() => {
-                          // TODO: 打开过滤菜单
+                          setFilterMenuOpen(true);
                         }}
                         onMenuClick={() => {
                           // TODO: 打开列菜单
                         }}
                         onColumnResize={handleColumnResize}
                       />
-                      {/* 浮动过滤器 */}
-                      {enableFloatingFilter &&
-                        (meta?.enableFiltering ?? column.enableFiltering) && (
-                          <FloatingFilter
-                            columnId={columnId}
-                            filterType={
-                              (meta?.filterType as
-                                | 'text'
-                                | 'number'
-                                | 'date') || 'text'
-                            }
-                            placeholder={meta?.filterPlaceholder}
-                            value={
-                              filtering.getFilterValue(columnId) as
-                                | string
-                                | undefined
-                            }
-                            onValueChange={handleFloatingFilterChange}
-                          />
-                        )}
-                    </React.Fragment>
+                    );
+                  })}
+                </tr>
+                {/* 浮动过滤器行 */}
+                {headerGroup.headers.some((header) => {
+                  const colId = header.column.id;
+                  const col = allVisibleColumns.find((c) => c.id === colId);
+                  const colMeta = col?.meta;
+                  return (
+                    colMeta?.enableFloatingFilter &&
+                    (colMeta?.enableFiltering ?? col?.enableFiltering)
                   );
+                }) && (
+                  <tr className='mt-grid-tr border-b'>
+                    {enableRowSelection && <td className='w-12' />}
+                    {headerGroup.headers.map((header) => {
+                      const columnId = header.column.id;
+                      const column = allVisibleColumns.find(
+                        (c) => c.id === columnId
+                      );
+                      if (!column) return <td key={header.id} />;
+                      const meta = column.meta;
+                      const enableFloatingFilter =
+                        meta?.enableFloatingFilter ?? false;
+                      const filterType =
+                        (meta?.filterType as 'text' | 'number' | 'date') ||
+                        'text';
+
+                      // 处理浮动过滤器值变化（使用防抖）
+                      const handleFloatingFilterChange = (value: string) => {
+                        let operator: 'contains' | 'gt' | 'lt' | 'eq' =
+                          'contains';
+                        if (filterType === 'number') {
+                          operator = 'gt';
+                        } else if (filterType === 'date') {
+                          operator = 'eq';
+                        }
+                        filtering.setFilter(columnId, operator, value);
+                      };
+
+                      const viewState = state.view;
+                      const width = viewState.columnsWidth?.[columnId];
+                      const pinned = viewState.columnsPinned?.[columnId];
+
+                      // 计算固定列偏移量（与表头一致）
+                      let leftOffset = enableRowSelection ? 48 : 0;
+                      let rightOffset = 0;
+                      const headerIndex = headerGroup.headers.findIndex(
+                        (h) => h.id === header.id
+                      );
+
+                      for (let i = 0; i < headerIndex; i++) {
+                        const prevHeader = headerGroup.headers[i];
+                        if (prevHeader) {
+                          const prevPinned =
+                            viewState.columnsPinned?.[prevHeader.column.id];
+                          if (prevPinned === 'left') {
+                            const prevCol = allVisibleColumns.find(
+                              (c) => c.id === prevHeader.column.id
+                            );
+                            const prevWidth =
+                              viewState.columnsWidth?.[prevHeader.column.id] ??
+                              (typeof prevCol?.width === 'number'
+                                ? prevCol.width
+                                : 150);
+                            leftOffset +=
+                              typeof prevWidth === 'number' ? prevWidth : 150;
+                          }
+                        }
+                      }
+
+                      for (
+                        let i = headerIndex + 1;
+                        i < headerGroup.headers.length;
+                        i++
+                      ) {
+                        const nextHeader = headerGroup.headers[i];
+                        if (nextHeader) {
+                          const nextPinned =
+                            viewState.columnsPinned?.[nextHeader.column.id];
+                          if (nextPinned === 'right') {
+                            const nextCol = allVisibleColumns.find(
+                              (c) => c.id === nextHeader.column.id
+                            );
+                            const nextWidth =
+                              viewState.columnsWidth?.[nextHeader.column.id] ??
+                              (typeof nextCol?.width === 'number'
+                                ? nextCol.width
+                                : 150);
+                            rightOffset +=
+                              typeof nextWidth === 'number' ? nextWidth : 150;
+                          }
+                        }
+                      }
+
+                      const stickyStyle: React.CSSProperties = {
+                        ...(width
+                          ? { width, minWidth: width, maxWidth: width }
+                          : {}),
+                        ...(pinned === 'left'
+                          ? {
+                              position: 'sticky',
+                              left: leftOffset,
+                              top: 0,
+                              zIndex: 30,
+                              backgroundColor: 'var(--muted)',
+                              boxShadow: '2px 0 4px -2px rgba(0, 0, 0, 0.1)'
+                            }
+                          : pinned === 'right'
+                            ? {
+                                position: 'sticky',
+                                right: rightOffset,
+                                top: 0,
+                                zIndex: 30,
+                                backgroundColor: 'var(--muted)',
+                                boxShadow: '-2px 0 4px -2px rgba(0, 0, 0, 0.1)'
+                              }
+                            : {})
+                      };
+
+                      return (
+                        <td key={header.id} className='p-0' style={stickyStyle}>
+                          {enableFloatingFilter &&
+                            (meta?.enableFiltering ??
+                              column.enableFiltering) && (
+                              <FloatingFilter
+                                columnId={columnId}
+                                filterType={filterType}
+                                placeholder={meta?.filterPlaceholder}
+                                value={
+                                  filtering.getFilterValue(columnId) as
+                                    | string
+                                    | undefined
+                                }
+                                onValueChange={handleFloatingFilterChange}
+                              />
+                            )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                )}
+                {/* 过滤菜单 Popover（放在表头外，通过 Portal 渲染） */}
+                {headerGroup.headers.map((header) => {
+                  const columnId = header.column.id;
+                  const column = allVisibleColumns.find(
+                    (c) => c.id === columnId
+                  );
+                  if (!column) return null;
+                  const meta = column.meta;
+                  const filterType =
+                    (meta?.filterType as 'text' | 'number' | 'date') || 'text';
+                  const filterMenuOpen = filterMenuOpenMap[columnId] || false;
+                  const setFilterMenuOpen = (open: boolean) => {
+                    setFilterMenuOpenMap((prev) => ({
+                      ...prev,
+                      [columnId]: open
+                    }));
+                  };
+
+                  return (meta?.enableFiltering ?? column.enableFiltering) ? (
+                    <FilterPopover
+                      key={`filter-${columnId}`}
+                      columnId={columnId}
+                      filterType={filterType}
+                      filtering={filtering}
+                      open={filterMenuOpen}
+                      onOpenChange={setFilterMenuOpen}
+                    />
+                  ) : null;
                 })}
-              </tr>
+              </React.Fragment>
             ))}
           </thead>
           <tbody

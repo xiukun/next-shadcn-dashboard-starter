@@ -6,5 +6,7 @@ export * from './components/ColumnHeaderContent';
 export * from './components/SortIndicator';
 export * from './components/FilterIndicator';
 export * from './components/FloatingFilter';
+export * from './components/FilterMenu';
+export * from './components/FilterPopover';
 export { useColumnSorting } from './hooks/useColumnSorting';
 export { useColumnFiltering } from './hooks/useColumnFiltering';
