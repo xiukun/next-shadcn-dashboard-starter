@@ -6,6 +6,45 @@ import type { UseColumnSortingResult } from '../hooks/useColumnSorting';
 import type { UseColumnFilteringResult } from '../hooks/useColumnFiltering';
 import { cn } from '../utils';
 
+export interface ColumnMenuLabels {
+  /**
+   * 升序排序文本
+   */
+  sortAsc?: string;
+  /**
+   * 降序排序文本
+   */
+  sortDesc?: string;
+  /**
+   * 清除排序文本
+   */
+  clearSort?: string;
+  /**
+   * 过滤文本
+   */
+  filter?: string;
+  /**
+   * 清除过滤文本
+   */
+  clearFilter?: string;
+  /**
+   * 固定到左侧文本
+   */
+  pinLeft?: string;
+  /**
+   * 固定到右侧文本
+   */
+  pinRight?: string;
+  /**
+   * 取消固定文本
+   */
+  unpin?: string;
+  /**
+   * 自动调整列宽文本
+   */
+  autoResizeColumn?: string;
+}
+
 export interface ColumnMenuProps {
   /**
    * 列 ID
@@ -70,6 +109,10 @@ export interface ColumnMenuProps {
    * 触发元素的引用（用于定位 Popover）
    */
   triggerRef?: React.RefObject<HTMLElement | null>;
+  /**
+   * 自定义标签文本（用于 i18n）
+   */
+  labels?: ColumnMenuLabels;
 }
 
 export function ColumnMenu(props: ColumnMenuProps) {
@@ -88,8 +131,25 @@ export function ColumnMenu(props: ColumnMenuProps) {
     onPinColumn,
     onAutoResize,
     onOpenFilter,
-    triggerRef
+    triggerRef,
+    labels
   } = props;
+
+  // 默认标签（中文）
+  const defaultLabels: Required<ColumnMenuLabels> = {
+    sortAsc: '升序排序',
+    sortDesc: '降序排序',
+    clearSort: '清除排序',
+    filter: '过滤',
+    clearFilter: '清除过滤',
+    pinLeft: '固定到左侧',
+    pinRight: '固定到右侧',
+    unpin: '取消固定',
+    autoResizeColumn: '自动调整列宽'
+  };
+
+  // 合并标签
+  const t = { ...defaultLabels, ...labels };
 
   if (!open) {
     return null;
@@ -223,7 +283,7 @@ export function ColumnMenu(props: ColumnMenuProps) {
                         d='M5 10l7-7m0 0l7 7m-7-7v18'
                       />
                     </svg>
-                    <span>升序排序</span>
+                    <span>{t.sortAsc}</span>
                   </div>
                 </button>
                 <button
@@ -249,7 +309,7 @@ export function ColumnMenu(props: ColumnMenuProps) {
                         d='M19 14l-7 7m0 0l-7-7m7 7V3'
                       />
                     </svg>
-                    <span>降序排序</span>
+                    <span>{t.sortDesc}</span>
                   </div>
                 </button>
                 {sortDirection && (
@@ -272,7 +332,7 @@ export function ColumnMenu(props: ColumnMenuProps) {
                           d='M6 18L18 6M6 6l12 12'
                         />
                       </svg>
-                      <span>清除排序</span>
+                      <span>{t.clearSort}</span>
                     </div>
                   </button>
                 )}
@@ -305,7 +365,7 @@ export function ColumnMenu(props: ColumnMenuProps) {
                           d='M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z'
                         />
                       </svg>
-                      <span>过滤</span>
+                      <span>{t.filter}</span>
                       {hasFilter && (
                         <span className='bg-primary ml-auto size-1.5 rounded-full' />
                       )}
@@ -331,7 +391,7 @@ export function ColumnMenu(props: ColumnMenuProps) {
                             d='M6 18L18 6M6 6l12 12'
                           />
                         </svg>
-                        <span>清除过滤</span>
+                        <span>{t.clearFilter}</span>
                       </div>
                     </button>
                   )}
@@ -366,7 +426,7 @@ export function ColumnMenu(props: ColumnMenuProps) {
                       d='M11 19l-7-7 7-7m8 14l-7-7 7-7'
                     />
                   </svg>
-                  <span>固定到左侧</span>
+                  <span>{t.pinLeft}</span>
                 </div>
               </button>
               <button
@@ -391,7 +451,7 @@ export function ColumnMenu(props: ColumnMenuProps) {
                       d='M13 5l7 7-7 7M5 5l7 7-7 7'
                     />
                   </svg>
-                  <span>固定到右侧</span>
+                  <span>{t.pinRight}</span>
                 </div>
               </button>
               {pinned && (
@@ -414,7 +474,7 @@ export function ColumnMenu(props: ColumnMenuProps) {
                         d='M6 18L18 6M6 6l12 12'
                       />
                     </svg>
-                    <span>取消固定</span>
+                    <span>{t.unpin}</span>
                   </div>
                 </button>
               )}
@@ -441,7 +501,7 @@ export function ColumnMenu(props: ColumnMenuProps) {
                     d='M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4'
                   />
                 </svg>
-                <span>自动调整列宽</span>
+                <span>{t.autoResizeColumn}</span>
               </div>
             </button>
           </div>

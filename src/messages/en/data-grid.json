@@ -1,0 +1,16 @@
+{
+  "columnMenu": {
+    "sortAsc": "Sort Ascending",
+    "sortDesc": "Sort Descending",
+    "clearSort": "Clear Sort",
+    "filter": "Filter",
+    "clearFilter": "Clear Filter",
+    "pinLeft": "Pin Left",
+    "pinRight": "Pin Right",
+    "unpin": "Unpin",
+    "autoResizeColumn": "Auto-resize Column"
+  },
+  "floatingFilter": {
+    "placeholder": "Filter..."
+  }
+}

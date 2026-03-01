@@ -34,7 +34,7 @@ import { useColumnFiltering } from './hooks/useColumnFiltering';
 import { ColumnHeader } from './components/ColumnHeader';
 import { FloatingFilter } from './components/FloatingFilter';
 import { FilterPopover } from './components/FilterPopover';
-import { ColumnMenu } from './components/ColumnMenu';
+import { ColumnMenu, type ColumnMenuLabels } from './components/ColumnMenu';
 import type { RowKey } from '@maita-table/core';
 
 export type EditMode = 'immediate' | 'single-row' | 'batch';
@@ -81,6 +81,10 @@ export interface DataGridProps<Row> {
     onCheckedChange?: (checked: boolean) => void;
     'aria-checked'?: boolean | 'mixed';
   }>;
+  /**
+   * 列菜单标签文本（用于 i18n）
+   */
+  columnMenuLabels?: ColumnMenuLabels;
 }
 
 export function DataGrid<Row>(props: DataGridProps<Row>) {
@@ -1080,6 +1084,7 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                         setColumnMenuOpen(false);
                       }}
                       triggerRef={menuButtonRef}
+                      labels={columnMenuLabels}
                     />
                   );
                 })}

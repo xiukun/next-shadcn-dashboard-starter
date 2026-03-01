@@ -1,0 +1,16 @@
+{
+  "columnMenu": {
+    "sortAsc": "升序排序",
+    "sortDesc": "降序排序",
+    "clearSort": "清除排序",
+    "filter": "过滤",
+    "clearFilter": "清除过滤",
+    "pinLeft": "固定到左侧",
+    "pinRight": "固定到右侧",
+    "unpin": "取消固定",
+    "autoResizeColumn": "自动调整列宽"
+  },
+  "floatingFilter": {
+    "placeholder": "过滤..."
+  }
+}

@@ -33,6 +33,7 @@ const DataGrid = dynamic(
 
 export default function Page() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<RowKey[]>([]);
+  const t = useTranslations('data-grid');
 
   // 配置列，启用过滤和排序功能
   const columns: ColumnConfig<DemoRow>[] = [
@@ -188,6 +189,17 @@ export default function Page() {
           enableRowSelection={true}
           selectionMode='multiple'
           enableSelectionPersistence={true}
+          columnMenuLabels={{
+            sortAsc: t('columnMenu.sortAsc'),
+            sortDesc: t('columnMenu.sortDesc'),
+            clearSort: t('columnMenu.clearSort'),
+            filter: t('columnMenu.filter'),
+            clearFilter: t('columnMenu.clearFilter'),
+            pinLeft: t('columnMenu.pinLeft'),
+            pinRight: t('columnMenu.pinRight'),
+            unpin: t('columnMenu.unpin'),
+            autoResizeColumn: t('columnMenu.autoResizeColumn')
+          }}
         />
       </div>
     </div>

@@ -11,9 +11,6 @@
 **用途**：表格核心功能
 - ✅ `getSortedRowModel()` - 排序功能
 - ✅ `getFilteredRowModel()` - 过滤功能
-- ✅ `getGroupedRowModel()` - 分组功能
-- ✅ `getExpandedRowModel()` - 展开/折叠功能
-- ✅ `aggregationFns` - 内置聚合函数（sum, min, max, avg, count）
 
 **优势**：
 - 性能优化（内置缓存、批量更新）
@@ -24,8 +21,7 @@
 ```tsx
 import { 
   getSortedRowModel,
-  getFilteredRowModel,
-  getGroupedRowModel
+  getFilteredRowModel
 } from '@tanstack/react-table';
 
 const table = useReactTable({
@@ -33,8 +29,7 @@ const table = useReactTable({
   columns: columnDefs,
   getCoreRowModel: getCoreRowModel(),
   getSortedRowModel: getSortedRowModel(), // 启用排序
-  getFilteredRowModel: getFilteredRowModel(), // 启用过滤
-  getGroupedRowModel: getGroupedRowModel(), // 启用分组
+  getFilteredRowModel: getFilteredRowModel() // 启用过滤
 });
 ```
 
@@ -66,53 +61,22 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 
 **注意**：Radix UI 底层使用 @floating-ui/react，无需直接安装
 
-### 3. cmdk（通过 shadcn/ui Command）
-
-**用途**：高性能搜索和命令面板
-- ✅ 集过滤器的搜索功能
-- ✅ 快速过滤选项列表
-
-**优势**：
-- 高性能搜索（虚拟化、防抖）
-- 键盘导航支持
-- 模糊匹配
-
-**使用示例**：
-```tsx
-import { Command, CommandInput, CommandList, CommandItem } from '@/components/ui/command';
-
-<Command>
-  <CommandInput placeholder="搜索选项..." />
-  <CommandList>
-    {filteredOptions.map(option => (
-      <CommandItem key={option}>{option}</CommandItem>
-    ))}
-  </CommandList>
-</Command>
-```
-
-### 4. shadcn/ui 组件库
+### 3. shadcn/ui 组件库
 
 **已安装的组件及其用途**：
 
 | 组件 | 用途 | 位置 |
 |------|------|------|
 | `Popover` | 列菜单容器 | ColumnMenu.tsx |
-| `Command` | 集过滤器搜索 | SetFilter.tsx |
 | `Input` | 浮动过滤器输入 | FloatingFilter.tsx |
-| `Checkbox` | 集过滤器多选 | SetFilter.tsx |
 | `Select` | 过滤操作符选择 | FilterMenu.tsx |
-| `ScrollArea` | 长列表滚动 | SetFilter.tsx |
-| `Collapsible` | 分组行展开/折叠 | GroupRow.tsx |
 | `Button` | 各种按钮 | 所有组件 |
 | `Separator` | 菜单分隔线 | ColumnMenu.tsx |
 
-### 5. @tanstack/react-virtual
+### 4. @tanstack/react-virtual
 
 **用途**：虚拟化渲染
 - ✅ 行虚拟化（已在使用）
-- ✅ 分组行虚拟化
-- ✅ 集过滤器选项列表虚拟化（如果选项很多）
 
 **优势**：
 - 高性能（只渲染可见项）
@@ -133,7 +97,6 @@ import { Command, CommandInput, CommandList, CommandItem } from '@/components/ui
 ### 3. 性能优化
 - TanStack Table 内置性能优化
 - @floating-ui/react 自动优化定位
-- cmdk 高性能搜索
 - react-virtual 虚拟化渲染
 
 ### 4. 类型安全
@@ -150,13 +113,8 @@ import { Command, CommandInput, CommandList, CommandItem } from '@/components/ui
 
 ### 阶段 2：过滤功能
 - 使用 `Input` 组件（浮动过滤）
-- 使用 `Popover` + `Command`（集过滤器）
+- 使用 `Popover`（过滤菜单）
 - 使用 `Select`（过滤操作符）
-
-### 阶段 3：分组聚合
-- 使用 TanStack Table 的 `getGroupedRowModel`
-- 使用 `Collapsible` 组件（展开/折叠）
-- 使用 TanStack Table 的 `aggregationFns`
 
 ## 总结
 
