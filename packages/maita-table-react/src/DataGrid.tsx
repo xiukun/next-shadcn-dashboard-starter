@@ -7,6 +7,7 @@ import { createColumnSchema } from '@maita-table/core';
 import {
   flexRender,
   getCoreRowModel,
+  getSortedRowModel,
   type ColumnDef,
   useReactTable
 } from '@tanstack/react-table';
@@ -27,6 +28,8 @@ import { useColumnPersistence } from './hooks/useColumnPersistence';
 import { useColumnVirtualization } from './hooks/useColumnVirtualization';
 import { useRowSelection, type SelectionMode } from './hooks/useRowSelection';
 import { useSelectionPersistence } from './hooks/useSelectionPersistence';
+import { useColumnSorting } from './hooks/useColumnSorting';
+import { ColumnHeader } from './components/ColumnHeader';
 import type { RowKey } from '@maita-table/core';
 
 export type EditMode = 'immediate' | 'single-row' | 'batch';
@@ -112,6 +115,12 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
     gridId: id,
     enabled: enableRowSelection && enableSelectionPersistence,
     store
+  });
+
+  // 列排序功能
+  const sorting = useColumnSorting({
+    store,
+    enableMultiSort: true // 支持多列排序
   });
 
   // 记录上次选中的行（用于范围选择）
@@ -219,10 +228,29 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
     return [...leftColumnDefs, ...centerColumnDefs, ...rightColumnDefs];
   }, [leftColumnDefs, centerColumnDefs, rightColumnDefs]);
 
+  // 将排序状态转换为 TanStack Table 格式
+  const tanStackSorting = React.useMemo(() => {
+    return (
+      state.view.sort?.map((s) => ({
+        id: s.id,
+        desc: s.desc
+      })) || []
+    );
+  }, [state.view.sort]);
+
   const table = useReactTable({
     data: state.data.rows,
     columns: columnDefs,
-    getCoreRowModel: getCoreRowModel()
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    state: {
+      sorting: tanStackSorting
+    },
+    onSortingChange: () => {
+      // 排序状态通过 useColumnSorting hook 管理
+      // TanStack Table 的排序主要用于前端计算和 UI 反馈
+    },
+    manualSorting: true // 使用服务端排序，但允许前端计算用于 UI 反馈
   });
 
   const parentRef = React.useRef<HTMLDivElement | null>(null);
@@ -607,6 +635,9 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                   const viewState = state.view;
                   const width = viewState.columnsWidth?.[columnId];
                   const pinned = viewState.columnsPinned?.[columnId];
+                  const column = allVisibleColumns.find(
+                    (c) => c.id === columnId
+                  );
 
                   // 计算当前列之前的左固定列宽度
                   // 如果启用了行选择，选择列（48px）是最左侧的固定列
@@ -657,64 +688,45 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                     }
                   }
 
-                  const stickyStyle: React.CSSProperties = {
-                    ...(width
-                      ? { width, minWidth: width, maxWidth: width }
-                      : {}),
-                    ...(pinned === 'left'
-                      ? {
-                          position: 'sticky',
-                          left: leftOffset,
-                          top: 0,
-                          zIndex: 40, // 高于 thead 的 z-10，但低于选择列表头（z-50）
-                          backgroundColor: 'var(--muted)', // 使用var()直接引用，兼容lab()格式，确保背景色正确，避免内容透过
-                          // 添加右侧阴影，视觉上区分固定列和非固定列
-                          boxShadow: '2px 0 4px -2px rgba(0, 0, 0, 0.1)'
-                        }
-                      : pinned === 'right'
-                        ? {
-                            position: 'sticky',
-                            right: rightOffset,
-                            top: 0,
-                            zIndex: 40, // 高于 thead 的 z-10，但低于选择列表头（z-50）
-                            backgroundColor: 'var(--muted)', // 使用var()直接引用，兼容lab()格式，确保背景色正确，避免内容透过
-                            // 添加左侧阴影，视觉上区分固定列和非固定列
-                            boxShadow: '-2px 0 4px -2px rgba(0, 0, 0, 0.1)'
-                          }
-                        : {})
-                  };
+                  if (!column) {
+                    return null;
+                  }
+
+                  const sortDirection = sorting.getSortDirection(columnId);
+                  const sortPriority = sorting.getSortPriority(columnId);
 
                   return (
-                    <th
+                    <ColumnHeader
                       key={header.id}
-                      data-column-id={columnId}
-                      className={`mt-grid-th text-muted-foreground group relative h-9 px-3 text-left text-xs font-medium ${
-                        showHeaderVerticalDividers
-                          ? 'border-border border-r'
-                          : ''
-                      }`}
-                      style={stickyStyle}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                      {/* 列宽调整手柄 */}
-                      <div
-                        className={
-                          showHeaderVerticalDividers
-                            ? 'bg-border hover:bg-primary/60 absolute top-0 right-0 h-full w-px cursor-col-resize transition-colors'
-                            : 'hover:bg-primary/50 absolute top-0 right-0 h-full w-px cursor-col-resize opacity-0 transition-opacity group-hover:opacity-100'
-                        }
-                        onDoubleClick={(e) => {
-                          e.stopPropagation();
-                          handleColumnResize(columnId);
-                        }}
-                        title='双击自动调整列宽'
-                      />
-                    </th>
+                      column={column}
+                      header={
+                        header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )
+                      }
+                      columnId={columnId}
+                      width={width}
+                      pinned={pinned}
+                      leftOffset={leftOffset}
+                      rightOffset={rightOffset}
+                      showVerticalDividers={showHeaderVerticalDividers}
+                      sortDirection={sortDirection}
+                      sortPriority={sortPriority}
+                      onSortClick={(e) => sorting.toggleSort(columnId, e)}
+                      onSortIndicatorClick={(e) =>
+                        sorting.toggleSort(columnId, e)
+                      }
+                      onFilterClick={() => {
+                        // TODO: 打开过滤菜单
+                      }}
+                      onMenuClick={() => {
+                        // TODO: 打开列菜单
+                      }}
+                      onColumnResize={handleColumnResize}
+                    />
                   );
                 })}
               </tr>

@@ -15,7 +15,9 @@
   },
   "dependencies": {
     "@maita-table/core": "workspace:*",
-    "lodash-es": "^4.17.23"
+    "lodash-es": "^4.17.23",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.0.2"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
