@@ -8,6 +8,7 @@ import {
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
+  getFilteredRowModel,
   type ColumnDef,
   useReactTable
 } from '@tanstack/react-table';
@@ -29,7 +30,9 @@ import { useColumnVirtualization } from './hooks/useColumnVirtualization';
 import { useRowSelection, type SelectionMode } from './hooks/useRowSelection';
 import { useSelectionPersistence } from './hooks/useSelectionPersistence';
 import { useColumnSorting } from './hooks/useColumnSorting';
+import { useColumnFiltering } from './hooks/useColumnFiltering';
 import { ColumnHeader } from './components/ColumnHeader';
+import { FloatingFilter } from './components/FloatingFilter';
 import type { RowKey } from '@maita-table/core';
 
 export type EditMode = 'immediate' | 'single-row' | 'batch';
@@ -121,6 +124,11 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
   const sorting = useColumnSorting({
     store,
     enableMultiSort: true // 支持多列排序
+  });
+
+  // 列过滤功能
+  const filtering = useColumnFiltering({
+    store
   });
 
   // 记录上次选中的行（用于范围选择）
@@ -236,21 +244,37 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
         desc: s.desc
       })) || []
     );
+    // 将过滤状态转换为 TanStack Table 格式
+    const tanStackColumnFilters = React.useMemo(() => {
+      return (
+        state.view.filters?.map((f) => ({
+          id: f.id,
+          value: f.value
+        })) || []
+      );
+    }, [state.view.filters]);
   }, [state.view.sort]);
 
   const table = useReactTable({
     data: state.data.rows,
     columns: columnDefs,
+    getFilteredRowModel: getFilteredRowModel(),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     state: {
-      sorting: tanStackSorting
+      sorting: tanStackSorting,
+      columnFilters: tanStackColumnFilters
     },
     onSortingChange: () => {
       // 排序状态通过 useColumnSorting hook 管理
       // TanStack Table 的排序主要用于前端计算和 UI 反馈
     },
-    manualSorting: true // 使用服务端排序，但允许前端计算用于 UI 反馈
+    onColumnFiltersChange: () => {
+      // 过滤状态通过 useColumnFiltering hook 管理
+      // TanStack Table 的过滤主要用于前端计算和 UI 反馈
+    },
+    manualSorting: true, // 使用服务端排序，但允许前端计算用于 UI 反馈
+    manualFiltering: true // 使用服务端过滤，但允许前端计算用于 UI 反馈
   });
 
   const parentRef = React.useRef<HTMLDivElement | null>(null);
@@ -690,43 +714,82 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
 
                   if (!column) {
                     return null;
+                    const hasFilter = filtering.hasFilter(columnId);
+                    const meta = column.meta;
+                    const enableFloatingFilter =
+                      meta?.enableFloatingFilter ?? false;
+
+                    // 处理浮动过滤器值变化（使用防抖）
+                    const handleFloatingFilterChange = (value: string) => {
+                      const filterType = meta?.filterType || 'text';
+                      let operator: 'contains' | 'gt' | 'lt' | 'eq' =
+                        'contains';
+                      if (filterType === 'number') {
+                        operator = 'gt'; // 默认大于，可以根据需要调整
+                      } else if (filterType === 'date') {
+                        operator = 'eq';
+                      }
+                      filtering.setFilter(columnId, operator, value);
+                    };
                   }
 
                   const sortDirection = sorting.getSortDirection(columnId);
                   const sortPriority = sorting.getSortPriority(columnId);
 
                   return (
-                    <ColumnHeader
-                      key={header.id}
-                      column={column}
-                      header={
-                        header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )
-                      }
-                      columnId={columnId}
-                      width={width}
-                      pinned={pinned}
-                      leftOffset={leftOffset}
-                      rightOffset={rightOffset}
-                      showVerticalDividers={showHeaderVerticalDividers}
-                      sortDirection={sortDirection}
-                      sortPriority={sortPriority}
-                      onSortClick={(e) => sorting.toggleSort(columnId, e)}
-                      onSortIndicatorClick={(e) =>
-                        sorting.toggleSort(columnId, e)
-                      }
-                      onFilterClick={() => {
-                        // TODO: 打开过滤菜单
-                      }}
-                      onMenuClick={() => {
-                        // TODO: 打开列菜单
-                      }}
-                      onColumnResize={handleColumnResize}
-                    />
+                    <React.Fragment key={header.id}>
+                      <ColumnHeader
+                        column={column}
+                        header={
+                          header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )
+                        }
+                        columnId={columnId}
+                        width={width}
+                        pinned={pinned}
+                        leftOffset={leftOffset}
+                        rightOffset={rightOffset}
+                        showVerticalDividers={showHeaderVerticalDividers}
+                        sortDirection={sortDirection}
+                        sortPriority={sortPriority}
+                        onSortClick={(e) => sorting.toggleSort(columnId, e)}
+                        onSortIndicatorClick={(e) =>
+                          sorting.toggleSort(columnId, e)
+                        }
+                        hasFilter={hasFilter}
+                        onFilterClick={() => {
+                          // TODO: 打开过滤菜单
+                        }}
+                        onMenuClick={() => {
+                          // TODO: 打开列菜单
+                        }}
+                        onColumnResize={handleColumnResize}
+                      />
+                      {/* 浮动过滤器 */}
+                      {enableFloatingFilter &&
+                        (meta?.enableFiltering ?? column.enableFiltering) && (
+                          <FloatingFilter
+                            columnId={columnId}
+                            filterType={
+                              (meta?.filterType as
+                                | 'text'
+                                | 'number'
+                                | 'date') || 'text'
+                            }
+                            placeholder={meta?.filterPlaceholder}
+                            value={
+                              filtering.getFilterValue(columnId) as
+                                | string
+                                | undefined
+                            }
+                            onValueChange={handleFloatingFilterChange}
+                          />
+                        )}
+                    </React.Fragment>
                   );
                 })}
               </tr>

@@ -4,4 +4,7 @@ export * from './DataGrid';
 export * from './components/ColumnHeader';
 export * from './components/ColumnHeaderContent';
 export * from './components/SortIndicator';
-export * from './hooks/useColumnSorting';
+export * from './components/FilterIndicator';
+export * from './components/FloatingFilter';
+export { useColumnSorting } from './hooks/useColumnSorting';
+export { useColumnFiltering } from './hooks/useColumnFiltering';

@@ -16,17 +16,17 @@
 - [x] 2.10 为排序功能添加单元测试
 
 ## 3. 阶段 2：浮动过滤与基础过滤
-- [ ] 3.1 创建 `packages/maita-table-react/src/components/FilterIndicator.tsx`，显示过滤状态
-- [ ] 3.2 创建 `packages/maita-table-react/src/components/FloatingFilter.tsx`，实现浮动过滤器
-- [ ] 3.3 在浮动过滤器中集成防抖处理（使用现有的 `useDebouncedCallback`）
+- [x] 3.1 创建 `packages/maita-table-react/src/components/FilterIndicator.tsx`，显示过滤状态
+- [x] 3.2 创建 `packages/maita-table-react/src/components/FloatingFilter.tsx`，实现浮动过滤器
+- [x] 3.3 在浮动过滤器中集成防抖处理（使用现有的 `useDebouncedCallback`）
 - [ ] 3.4 实现文本过滤器（contains, startsWith, equals）
 - [ ] 3.5 实现数字过滤器（>, <, =, between）
 - [ ] 3.6 实现日期过滤器（date picker）
 - [ ] 3.7 创建 `packages/maita-table-react/src/components/ColumnMenu.tsx`，使用 shadcn/ui Popover
 - [ ] 3.8 创建 `packages/maita-table-react/src/components/FilterMenu.tsx`，根据 filterType 渲染对应过滤器
-- [ ] 3.9 创建 `packages/maita-table-react/src/hooks/useColumnFiltering.ts`，集成 TanStack Table 的过滤功能
-- [ ] 3.10 集成 TanStack Table 的 `getFilteredRowModel`，支持前端过滤
-- [ ] 3.11 为过滤功能添加单元测试
+- [x] 3.9 创建 `packages/maita-table-react/src/hooks/useColumnFiltering.ts`，集成 TanStack Table 的过滤功能
+- [x] 3.10 集成 TanStack Table 的 `getFilteredRowModel`，支持前端过滤
+- [x] 3.11 为过滤功能添加单元测试
 
 ## 4. 阶段 3：集过滤器（Set Filter）
 - [ ] 4.1 创建 `packages/maita-table-react/src/components/SetFilter.tsx`，实现集过滤器组件
