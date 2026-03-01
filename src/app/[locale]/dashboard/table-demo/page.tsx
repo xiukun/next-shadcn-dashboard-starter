@@ -5,7 +5,7 @@ import { z } from 'zod';
 import dynamic from 'next/dynamic';
 import type { EditMode } from '@maita-table/react';
 import { createNextDataSource } from '@maita-table/next';
-import type { ColumnConfig } from '@maita-table/core';
+import type { ColumnConfig, RowKey } from '@maita-table/core';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -41,7 +41,9 @@ const DataGrid = dynamic(
 
 export default function Page() {
   const t = useTranslations('maita-table-demo');
+  const tCommon = useTranslations('common');
   const [editMode, setEditMode] = useState<EditMode>('immediate');
+  const [selectedRowKeys, setSelectedRowKeys] = useState<RowKey[]>([]);
 
   // 基础 5 列
   const baseColumns: ColumnConfig<DemoRow>[] = [
@@ -161,6 +163,27 @@ export default function Page() {
     }
   };
 
+  const handleSelectionChange = (keys: RowKey[]) => {
+    setSelectedRowKeys(keys);
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedRowKeys.length === 0) {
+      toast.info('请先选择要删除的行');
+      return;
+    }
+    toast.success(`已删除 ${selectedRowKeys.length} 行数据（演示功能）`);
+    setSelectedRowKeys([]);
+  };
+
+  const handleBatchExport = () => {
+    if (selectedRowKeys.length === 0) {
+      toast.info('请先选择要导出的行');
+      return;
+    }
+    toast.success(`已导出 ${selectedRowKeys.length} 行数据（演示功能）`);
+  };
+
   return (
     <div className='space-y-4 p-6'>
       <div className='space-y-1'>
@@ -168,7 +191,7 @@ export default function Page() {
         <p className='text-muted-foreground text-sm'>{t('description')}</p>
       </div>
 
-      <div className='flex items-center gap-4'>
+      <div className='flex flex-wrap items-center gap-4'>
         <div className='flex items-center gap-2'>
           <label className='text-sm font-medium'>编辑模式:</label>
           <Select
@@ -190,6 +213,26 @@ export default function Page() {
             编辑后点击表格底部的提交按钮保存更改
           </p>
         )}
+        {selectedRowKeys.length > 0 && (
+          <div className='ml-auto flex items-center gap-2'>
+            <span className='text-muted-foreground text-sm'>
+              已选择 {selectedRowKeys.length} 行
+            </span>
+            <Button variant='outline' size='sm' onClick={handleBatchExport}>
+              导出选中
+            </Button>
+            <Button variant='destructive' size='sm' onClick={handleBatchDelete}>
+              {tCommon('delete')} 选中
+            </Button>
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={() => setSelectedRowKeys([])}
+            >
+              清空选择
+            </Button>
+          </div>
+        )}
       </div>
 
       <DataGrid
@@ -205,6 +248,11 @@ export default function Page() {
         showHeaderVerticalDividers
         editMode={editMode}
         CheckboxComponent={Checkbox}
+        selectedRowKeys={selectedRowKeys}
+        onSelectionChange={handleSelectionChange}
+        enableRowSelection={true}
+        selectionMode='multiple'
+        enableSelectionPersistence={true}
         onSubmit={editMode !== 'immediate' ? handleSubmit : undefined}
         onValidationError={(errors) => {
           const errorMessages = Object.values(errors);

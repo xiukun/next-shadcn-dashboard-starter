@@ -190,7 +190,7 @@ export function HeaderSelectionCheckbox(props: HeaderSelectionCheckboxProps) {
         aria-checked={
           isMounted ? (isIndeterminate ? 'mixed' : isAllSelected) : false
         }
-        aria-label={isAllSelected ? '取消全选' : '全选'}
+        aria-label={isAllSelected ? 'Deselect all' : 'Select all'}
         suppressHydrationWarning
       />
     );
@@ -221,7 +221,7 @@ export function HeaderSelectionCheckbox(props: HeaderSelectionCheckboxProps) {
       onKeyDown={handleKeyDown}
       role='columnheader'
       tabIndex={0}
-      aria-label={isAllSelected ? '取消全选' : '全选'}
+      aria-label={isAllSelected ? 'Deselect all' : 'Select all'}
     >
       <div
         className='flex items-center justify-center'
