@@ -68,6 +68,14 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
+    title: 'table filter demo',
+    url: '/dashboard/table-filter-demo',
+    icon: 'table',
+    shortcut: ['d', 'f'],
+    isActive: false,
+    items: []
+  },
+  {
     title: 'Product',
     url: '/dashboard/product',
     icon: 'product',

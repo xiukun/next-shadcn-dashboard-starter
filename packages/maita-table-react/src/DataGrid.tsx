@@ -34,6 +34,7 @@ import { useColumnFiltering } from './hooks/useColumnFiltering';
 import { ColumnHeader } from './components/ColumnHeader';
 import { FloatingFilter } from './components/FloatingFilter';
 import { FilterPopover } from './components/FilterPopover';
+import { ColumnMenu } from './components/ColumnMenu';
 import type { RowKey } from '@maita-table/core';
 
 export type EditMode = 'immediate' | 'single-row' | 'batch';
@@ -136,6 +137,21 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
   const [filterMenuOpenMap, setFilterMenuOpenMap] = React.useState<
     Record<string, boolean>
   >({});
+
+  // 列菜单打开状态（按列 ID 存储）
+  const [columnMenuOpenMap, setColumnMenuOpenMap] = React.useState<
+    Record<string, boolean>
+  >({});
+
+  // 列菜单按钮 ref 映射（按列 ID 存储）
+  const columnMenuButtonRefs = React.useRef<
+    Map<string, React.RefObject<HTMLButtonElement | null>>
+  >(new Map());
+
+  // 过滤按钮 ref 映射（按列 ID 存储）
+  const filterButtonRefs = React.useRef<
+    Map<string, React.RefObject<HTMLButtonElement | null>>
+  >(new Map());
 
   // 记录上次选中的行（用于范围选择）
   const lastSelectedRowKeyRef = React.useRef<RowKey | null>(null);
@@ -741,6 +757,34 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                       }));
                     };
 
+                    const columnMenuOpen = columnMenuOpenMap[columnId] || false;
+                    const setColumnMenuOpen = (open: boolean) => {
+                      setColumnMenuOpenMap((prev) => ({
+                        ...prev,
+                        [columnId]: open
+                      }));
+                    };
+
+                    // 菜单按钮的 ref（用于 Popover 定位）
+                    if (!columnMenuButtonRefs.current.has(columnId)) {
+                      columnMenuButtonRefs.current.set(
+                        columnId,
+                        React.createRef<HTMLButtonElement>()
+                      );
+                    }
+                    const menuButtonRef =
+                      columnMenuButtonRefs.current.get(columnId)!;
+
+                    // 过滤按钮的 ref（用于 Popover 定位）
+                    if (!filterButtonRefs.current.has(columnId)) {
+                      filterButtonRefs.current.set(
+                        columnId,
+                        React.createRef<HTMLButtonElement>()
+                      );
+                    }
+                    const filterButtonRef =
+                      filterButtonRefs.current.get(columnId)!;
+
                     // 处理浮动过滤器值变化（使用防抖）
                     const handleFloatingFilterChange = (value: string) => {
                       let operator: 'contains' | 'gt' | 'lt' | 'eq' =
@@ -782,9 +826,15 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                           setFilterMenuOpen(true);
                         }}
                         onMenuClick={() => {
-                          // TODO: 打开列菜单
+                          setColumnMenuOpen(true);
                         }}
                         onColumnResize={handleColumnResize}
+                        menuButtonRef={
+                          menuButtonRef as React.RefObject<HTMLButtonElement>
+                        }
+                        filterButtonRef={
+                          filterButtonRef as React.RefObject<HTMLButtonElement>
+                        }
                       />
                     );
                   })}
@@ -946,6 +996,18 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                     }));
                   };
 
+                  const columnMenuOpen = columnMenuOpenMap[columnId] || false;
+                  const setColumnMenuOpen = (open: boolean) => {
+                    setColumnMenuOpenMap((prev) => ({
+                      ...prev,
+                      [columnId]: open
+                    }));
+                  };
+
+                  // 获取过滤按钮的 ref
+                  const filterButtonRef =
+                    filterButtonRefs.current.get(columnId);
+
                   return (meta?.enableFiltering ?? column.enableFiltering) ? (
                     <FilterPopover
                       key={`filter-${columnId}`}
@@ -954,8 +1016,72 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
                       filtering={filtering}
                       open={filterMenuOpen}
                       onOpenChange={setFilterMenuOpen}
+                      triggerRef={
+                        filterButtonRef as React.RefObject<HTMLElement>
+                      }
                     />
                   ) : null;
+                })}
+                {/* 列菜单 Popover（放在表头外，通过 Portal 渲染） */}
+                {headerGroup.headers.map((header) => {
+                  const columnId = header.column.id;
+                  const column = allVisibleColumns.find(
+                    (c) => c.id === columnId
+                  );
+                  if (!column) return null;
+                  const viewState = state.view;
+                  const pinned = viewState.columnsPinned?.[columnId];
+                  const sortDirection = sorting.getSortDirection(columnId);
+                  const hasFilter = filtering.hasFilter(columnId);
+                  const columnMenuOpen = columnMenuOpenMap[columnId] || false;
+                  const setColumnMenuOpen = (open: boolean) => {
+                    setColumnMenuOpenMap((prev) => ({
+                      ...prev,
+                      [columnId]: open
+                    }));
+                  };
+
+                  const filterMenuOpen = filterMenuOpenMap[columnId] || false;
+                  const setFilterMenuOpen = (open: boolean) => {
+                    setFilterMenuOpenMap((prev) => ({
+                      ...prev,
+                      [columnId]: open
+                    }));
+                  };
+
+                  const columnTitle =
+                    typeof column.header === 'string'
+                      ? column.header
+                      : (column.header as any)?.toString?.() || columnId;
+
+                  const menuButtonRef =
+                    columnMenuButtonRefs.current.get(columnId);
+
+                  return (
+                    <ColumnMenu
+                      key={`menu-${columnId}`}
+                      columnId={columnId}
+                      columnTitle={columnTitle}
+                      enableSorting={column.enableSorting}
+                      enableFiltering={
+                        column.meta?.enableFiltering ?? column.enableFiltering
+                      }
+                      sortDirection={sortDirection}
+                      hasFilter={hasFilter}
+                      pinned={pinned}
+                      sorting={sorting}
+                      filtering={filtering}
+                      open={columnMenuOpen}
+                      onOpenChange={setColumnMenuOpen}
+                      onPinColumn={handleColumnPinnedChange}
+                      onAutoResize={handleColumnResize}
+                      onOpenFilter={() => {
+                        setFilterMenuOpen(true);
+                        setColumnMenuOpen(false);
+                      }}
+                      triggerRef={menuButtonRef}
+                    />
+                  );
                 })}
               </React.Fragment>
             ))}

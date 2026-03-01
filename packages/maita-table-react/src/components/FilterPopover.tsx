@@ -45,16 +45,19 @@ export function FilterPopover(props: FilterPopoverProps) {
     return null;
   }
 
+  // 使用 virtualRef 来定位 Popover
+  const virtualRef = React.useMemo(() => {
+    if (!triggerRef?.current) return null;
+    return {
+      current: {
+        getBoundingClientRect: () => triggerRef.current!.getBoundingClientRect()
+      }
+    } as React.RefObject<{ getBoundingClientRect: () => DOMRect }>;
+  }, [triggerRef]);
+
   return (
     <PopoverPrimitive.Root open={open} onOpenChange={onOpenChange}>
-      {triggerRef && (
-        <PopoverPrimitive.Anchor asChild>
-          <div
-            ref={triggerRef as any}
-            style={{ position: 'absolute', pointerEvents: 'none' }}
-          />
-        </PopoverPrimitive.Anchor>
-      )}
+      {virtualRef && <PopoverPrimitive.Anchor virtualRef={virtualRef} />}
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content
           align='start'

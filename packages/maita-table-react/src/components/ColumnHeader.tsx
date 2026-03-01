@@ -59,6 +59,14 @@ export interface ColumnHeaderProps<Row> {
    */
   onColumnResize?: (columnId: string) => void;
   /**
+   * 菜单按钮的 ref（用于 Popover 定位）
+   */
+  menuButtonRef?: React.RefObject<HTMLButtonElement>;
+  /**
+   * 过滤按钮的 ref（用于 Popover 定位）
+   */
+  filterButtonRef?: React.RefObject<HTMLButtonElement>;
+  /**
    * 自定义 className
    */
   className?: string;
@@ -82,6 +90,8 @@ export function ColumnHeader<Row>(props: ColumnHeaderProps<Row>) {
     onFilterClick,
     onMenuClick,
     onColumnResize,
+    menuButtonRef,
+    filterButtonRef,
     className
   } = props;
 
@@ -134,6 +144,8 @@ export function ColumnHeader<Row>(props: ColumnHeaderProps<Row>) {
         onSortIndicatorClick={onSortIndicatorClick}
         onFilterClick={onFilterClick}
         onMenuClick={onMenuClick}
+        menuButtonRef={menuButtonRef}
+        filterButtonRef={filterButtonRef}
       />
       {/* 列宽调整手柄 */}
       <div

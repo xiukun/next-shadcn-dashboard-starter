@@ -8,5 +8,6 @@ export * from './components/FilterIndicator';
 export * from './components/FloatingFilter';
 export * from './components/FilterMenu';
 export * from './components/FilterPopover';
+export * from './components/ColumnMenu';
 export { useColumnSorting } from './hooks/useColumnSorting';
 export { useColumnFiltering } from './hooks/useColumnFiltering';

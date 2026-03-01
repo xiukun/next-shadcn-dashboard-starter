@@ -64,6 +64,14 @@ export interface ColumnHeaderContentProps {
    */
   onMenuClick?: (e: React.MouseEvent) => void;
   /**
+   * 菜单按钮的 ref（用于 Popover 定位）
+   */
+  menuButtonRef?: React.RefObject<HTMLButtonElement>;
+  /**
+   * 过滤指示器的 ref（用于 Popover 定位）
+   */
+  filterButtonRef?: React.RefObject<HTMLButtonElement>;
+  /**
    * 自定义 className
    */
   className?: string;
@@ -81,6 +89,8 @@ export function ColumnHeaderContent(props: ColumnHeaderContentProps) {
     onSortIndicatorClick,
     onFilterClick,
     onMenuClick,
+    menuButtonRef,
+    filterButtonRef,
     className
   } = props;
 
@@ -113,6 +123,7 @@ export function ColumnHeaderContent(props: ColumnHeaderContentProps) {
         {/* 过滤指示器 */}
         {enableFiltering && (
           <FilterIndicator
+            ref={filterButtonRef}
             hasFilter={hasFilter || false}
             onClick={onFilterClick}
           />
@@ -120,6 +131,7 @@ export function ColumnHeaderContent(props: ColumnHeaderContentProps) {
 
         {/* 菜单按钮 */}
         <button
+          ref={menuButtonRef}
           type='button'
           onClick={onMenuClick}
           className='text-muted-foreground hover:text-foreground flex items-center rounded px-1.5 py-0.5 opacity-0 transition-opacity group-hover:opacity-100'
