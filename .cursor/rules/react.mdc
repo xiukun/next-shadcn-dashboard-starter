@@ -1,0 +1,436 @@
+---
+name: React性能优化
+description: React 企业级性能优化与最佳实践，涵盖 Next.js 16、React 19、TanStack Table 等
+alwaysApply: true
+globs: *.tsx,*.ts,*.jsx,*.js
+---
+
+# **React 企业级性能优化 & 最佳实践手册**
+
+本手册旨在总结 React 开发中规避不良习惯、处理闭包陷阱以及构建高性能应用的工程化方案。特别针对 **Next.js 16 App Router**、**React 19**、**TanStack Table** 和 **Zustand** 技术栈。
+
+## **一、 渲染性能：规避"无意义重复"**
+
+### **1\. 引用稳定性与 Hook 的克制使用**
+
+在 React 中，props 的改变是通过 `Object.is` 判断的。但滥用 `useMemo` 和 `useCallback` 反而会增加内存开销。
+
+#### **避坑：不要"乱用"钩子**
+
+* ❌ **不要**为基础数据类型（string, number, boolean）使用 `useMemo`
+* ❌ **不要**为简单的函数（如直接调用 `setState` 的匿名函数）在非子组件优化场景下使用 `useCallback`
+* ❌ **不要**在没有配合 `React.memo` 的子组件上使用缓存钩子，因为父组件重新渲染时，子组件依然会刷新
+* ❌ **不要**为每次渲染都会重新创建的对象/数组使用 `useMemo`，除非它作为依赖项
+
+#### **对策：正确的缓存时机**
+
+* ✅ **配合 React.memo**：当子组件被 `memo` 包裹且接收复杂对象/函数时
+  ```tsx
+  // ✅ 正确：配合 memo 使用
+  const MemoizedChild = React.memo(Child);
+  const handleClick = useCallback(() => { /* ... */ }, []);
+  
+  // ❌ 错误：没有 memo，useCallback 无效
+  const handleClick = useCallback(() => { /* ... */ }, []);
+  ```
+* ✅ **作为依赖项**：当该对象/函数是另一个 `useEffect` 或 `useMemo` 的依赖项时
+  ```tsx
+  // ✅ 正确：作为依赖项需要稳定引用
+  const columns = useMemo(() => [...], []);
+  useEffect(() => {
+    // 使用 columns
+  }, [columns]);
+  ```
+* ✅ **复杂计算**：涉及大量数据处理（如万级数据过滤、列定义生成）时
+  ```tsx
+  // ✅ 正确：复杂计算缓存
+  const filteredData = useMemo(() => {
+    return data.filter(/* 复杂逻辑 */);
+  }, [data, filters]);
+  ```
+* ✅ **TanStack Table 列定义**：列定义应静态化或使用 `useMemo`，避免每次渲染重新创建
+  ```tsx
+  // ✅ 正确：列定义静态化
+  const columns = useMemo(() => createColumns(), []);
+  
+  // ❌ 错误：每次渲染都重新创建
+  const columns = createColumns();
+  ```
+
+### **2\. 状态下放 (State Colocation)**
+
+* **避坑**：过度依赖全局状态（Context/Zustand）存储局部 UI 状态（如：输入框文本、弹窗开关）
+* **对策**：将状态限制在最小受影响范围内。如果只有子组件需要该状态，就不要放在父组件
+
+#### **Zustand 状态管理最佳实践**
+
+* ✅ **全局状态**：用户信息、主题、语言等真正全局的状态
+* ✅ **共享状态**：多个组件需要访问的共享状态（如表格筛选、排序）
+* ❌ **局部状态**：单个组件内的 UI 状态（如输入框值、弹窗开关）应使用 `useState`
+* ✅ **Slice 模式**：使用 Zustand Slice 模式拆分状态，避免单一巨大 store
+  ```tsx
+  // ✅ 正确：使用 slice 拆分状态
+  const useViewSlice = create<ViewSlice>((set) => ({
+    sort: [],
+    setSort: (sort) => set({ sort })
+  }));
+  
+  // ❌ 错误：所有状态放在一个 store
+  const useStore = create((set) => ({
+    sort: [],
+    filters: {},
+    user: null,
+    theme: 'light',
+    // ... 所有状态混在一起
+  }));
+  ```
+
+### **3\. 规避 Context 造成的全量更新**
+
+* **避坑**：将大量不相关的状态塞入同一个 `Context.Provider`
+* **对策**：
+  * ✅ **Context 拆分**：按功能模块拆分不同的 Provider
+    ```tsx
+    // ✅ 正确：拆分 Context
+    <ThemeProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </ThemeProvider>
+    
+    // ❌ 错误：所有状态放在一个 Context
+    <AppProvider> {/* 包含 theme, auth, user, settings... */} </AppProvider>
+    ```
+  * ✅ **Selectors 模式**：通过解构或拆分状态，减少不必要的消费组件刷新
+    ```tsx
+    // ✅ 正确：使用 selector 只订阅需要的状态
+    const theme = useThemeStore((state) => state.theme);
+    
+    // ❌ 错误：订阅整个 store
+    const { theme, user, settings } = useThemeStore();
+    ```
+  * ✅ **Zustand 自动选择**：Zustand 会自动进行浅比较，只订阅需要的字段即可
+
+## **二、 闭包陷阱 (Stale Closure) 深度优化方案**
+
+### **1\. 函数式更新 (Functional Updates)**
+
+消除对当前 State 的直接依赖。
+
+* **场景**：定时器、事件监听、频繁触发的更新。  
+* **实践**：setCount(c \=\> c \+ 1\) 优于 setCount(count \+ 1\)。
+
+### **2\. 模式：useEvent (Stable Function Reference)**
+
+针对"既要函数引用不变，又要获取最新状态"的矛盾场景。
+
+* **企业级实现**（TypeScript 版本）：
+
+```tsx
+function useEvent<T extends (...args: any[]) => any>(handler: T): T {
+  const handlerRef = useRef<T>(handler);
+  
+  useLayoutEffect(() => {
+    handlerRef.current = handler;
+  });
+  
+  return useCallback((...args: Parameters<T>) => {
+    return handlerRef.current?.(...args);
+  }, []) as T;
+}
+
+// 使用示例：事件处理器需要最新状态但引用要稳定
+function MyComponent() {
+  const [count, setCount] = useState(0);
+  
+  // ✅ 正确：使用 useEvent 保持引用稳定
+  const handleClick = useEvent(() => {
+    console.log(count); // 总是获取最新的 count
+  });
+  
+  useEffect(() => {
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [handleClick]); // handleClick 引用稳定，不会重复绑定
+}
+```
+
+## **三、 企业级进阶优化模式：Next.js & TanStack 架构**
+
+### **1\. Next.js App Router 性能优化**
+
+#### **Server Components vs Client Components**
+
+* ✅ **默认使用 Server Components**：减少客户端 JavaScript 体积，提升首屏性能
+  ```tsx
+  // ✅ 正确：Server Component（默认）
+  export default async function Page() {
+    const data = await fetchData();
+    return <DataTable data={data} />;
+  }
+  
+  // ❌ 错误：不必要的 Client Component
+  'use client';
+  export default function Page() {
+    const [data, setData] = useState([]);
+    useEffect(() => {
+      fetchData().then(setData);
+    }, []);
+    return <DataTable data={data} />;
+  }
+  ```
+* ✅ **按需使用 'use client'**：只在需要浏览器 API、React Hooks、事件处理时使用
+* ✅ **Suspense 边界**：使用 Suspense 包裹异步组件，提供加载状态
+  ```tsx
+  // ✅ 正确：使用 Suspense
+  <Suspense fallback={<DataTableSkeleton />}>
+    <ProductListingPage />
+  </Suspense>
+  ```
+* ✅ **Streaming SSR**：利用 Next.js 的 Streaming 特性，优先渲染关键内容
+
+#### **数据获取优化**
+
+* ✅ **并行数据获取**：使用 `Promise.all` 并行获取多个数据源
+  ```tsx
+  const [user, products] = await Promise.all([
+    fetchUser(),
+    fetchProducts()
+  ]);
+  ```
+* ✅ **数据缓存**：使用 Next.js 的 `cache` 函数缓存重复请求
+* ✅ **SearchParams 缓存**：使用 `searchParamsCache` 进行类型安全的参数解析
+
+### **2\. TanStack Table 性能优化**
+
+在使用 TanStack Table 时，表格的性能瓶颈通常在列渲染和大量数据渲染。
+
+* ✅ **列定义静态化**：将 columns 定义移出组件外部，或者使用 `useMemo` 包裹
+  ```tsx
+  // ✅ 正确：列定义静态化
+  const columns = useMemo(() => createColumns(), []);
+  
+  // ❌ 错误：每次渲染都重新创建
+  const columns = createColumns();
+  ```
+* ✅ **Cell 级优化**：对于频繁操作的单元格（如开关、输入框），应封装为独立的备忘组件
+  ```tsx
+  // ✅ 正确：Cell 组件 memo 化
+  const EditableCell = React.memo(({ value, onChange }) => {
+    return <Input value={value} onChange={onChange} />;
+  });
+  ```
+* ✅ **useTransition 优化**：在搜索/过滤时使用 `startTransition` 保持输入流畅
+  ```tsx
+  const [isPending, startTransition] = useTransition();
+  
+  const handleFilter = (value: string) => {
+    startTransition(() => {
+      setFilterValue(value);
+    });
+  };
+  ```
+* ✅ **URL 状态同步**：使用 `nuqs` 将表格状态同步到 URL，支持分享和刷新
+  ```tsx
+  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
+  const [sort, setSort] = useQueryState('sort', getSortingStateParser());
+  ```
+
+### **3\. 列表虚拟化 (Virtualization)**
+
+针对大数据量列表（> 500行），结合虚拟化库进行优化。
+
+* ✅ **推荐库**：`@tanstack/react-virtual`（比 react-window 更现代且支持动态高度）
+* ✅ **实现要点**：
+  * **动态高度支持**：利用 `estimateSize` 提高滚动流畅度
+  * **滚动同步**：在使用 ScrollArea 时，确保虚拟化容器正确监听滚动事件
+  * **表格集成**：在 `<tbody>` 中使用虚拟行，通过绝对定位偏移量模拟滚动
+  ```tsx
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 50,
+    overscan: 10
+  });
+  ```
+* ✅ **DataGrid 虚拟化**：在 DataGrid 组件库中使用 `useTableVirtualization` hook
+
+### **4\. React 19 新特性优化**
+
+#### **useOptimistic (乐观更新)**
+
+* ✅ **适用场景**：表单提交、列表操作等需要即时反馈的场景
+  ```tsx
+  const [optimisticState, addOptimistic] = useOptimistic(
+    state,
+    (current, optimisticValue) => ({
+      ...current,
+      items: [...current.items, optimisticValue]
+    })
+  );
+  ```
+
+#### **useActionState (表单状态管理)**
+
+* ✅ **替代 useFormState**：更简洁的表单状态管理
+  ```tsx
+  const [state, formAction] = useActionState(submitAction, initialState);
+  ```
+
+#### **useFormStatus (表单状态)**
+
+* ✅ **表单提交状态**：在表单组件内部获取提交状态
+  ```tsx
+  function SubmitButton() {
+    const { pending } = useFormStatus();
+    return <button disabled={pending}>Submit</button>;
+  }
+  ```
+
+### **5\. TypeScript 性能优化**
+
+#### **类型推断优化**
+
+* ✅ **泛型约束**：使用泛型约束减少类型检查开销
+  ```tsx
+  // ✅ 正确：明确的泛型约束
+  function useDataTable<TRow extends Record<string, any>>(
+    props: UseDataTableProps<TRow>
+  ) { /* ... */ }
+  ```
+* ✅ **类型窄化**：使用类型守卫减少运行时检查
+  ```tsx
+  function isString(value: unknown): value is string {
+    return typeof value === 'string';
+  }
+  ```
+* ❌ **避免过度使用 any**：使用 `unknown` 或具体类型替代 `any`
+
+#### **组件 Props 类型**
+
+* ✅ **使用 interface 而非 type**：对于对象类型，interface 性能更好
+* ✅ **Props 泛型化**：支持任意行数据类型的组件应使用泛型
+  ```tsx
+  interface DataTableProps<TRow> {
+    data: TRow[];
+    columns: ColumnDef<TRow>[];
+  }
+  ```
+
+## **四、 性能监控与审计能力**
+
+| 阶段 | 工具 | 目的 |
+| :---- | :---- | :---- |
+| **开发期** | Why-did-you-render | 实时提醒哪些组件发生了不必要的渲染 |
+| **调试期** | React DevTools Profiler | 分析 Commit 阶段耗时，定位昂贵组件 |
+| **线上监控** | Web Vitals (LCP, FID, CLS) | 监控真实用户的感知性能 |
+| **持续集成** | Lighthouse CI | 自动化审计代码合并对性能的影响 |
+| **Next.js 分析** | `@next/bundle-analyzer` | 分析打包体积，识别大型依赖 |
+| **运行时分析** | Sentry Performance | 监控真实用户性能指标 |
+
+## **五、 常见性能陷阱与解决方案**
+
+### **1. 闭包陷阱 (Stale Closure)**
+
+```tsx
+// ❌ 错误：闭包陷阱
+function Component() {
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCount(count + 1); // 总是使用初始值 0
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []); // 缺少 count 依赖
+  
+  // ✅ 正确：函数式更新
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCount(c => c + 1); // 总是获取最新值
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+}
+```
+
+### **2. 不必要的重新渲染**
+
+```tsx
+// ❌ 错误：每次渲染都创建新对象
+function Parent() {
+  const config = { theme: 'dark' }; // 新对象
+  return <Child config={config} />;
+}
+
+// ✅ 正确：使用 useMemo 或提取到外部
+const config = { theme: 'dark' }; // 静态对象
+function Parent() {
+  return <Child config={config} />;
+}
+```
+
+### **3. Context 值不稳定**
+
+```tsx
+// ❌ 错误：每次渲染都创建新对象
+function Provider({ children }) {
+  const value = { user, theme }; // 新对象
+  return <Context.Provider value={value}>{children}</Context.Provider>;
+}
+
+// ✅ 正确：使用 useMemo 稳定引用
+function Provider({ children }) {
+  const value = useMemo(() => ({ user, theme }), [user, theme]);
+  return <Context.Provider value={value}>{children}</Context.Provider>;
+}
+```
+
+### **4. 大量数据渲染**
+
+```tsx
+// ❌ 错误：一次性渲染大量数据
+function List({ items }) {
+  return (
+    <div>
+      {items.map(item => <Item key={item.id} data={item} />)}
+    </div>
+  );
+}
+
+// ✅ 正确：使用虚拟化
+function List({ items }) {
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 50
+  });
+  
+  return (
+    <div ref={parentRef}>
+      {virtualizer.getVirtualItems().map(virtualRow => (
+        <Item key={virtualRow.key} data={items[virtualRow.index]} />
+      ))}
+    </div>
+  );
+}
+```
+
+## **六、 总结：核心心法**
+
+1. **优先局部化**：状态越近越好，渲染越少越好
+2. **克制使用缓存**：理解 `useMemo`/`useCallback` 的成本，仅在解决引用漂移和昂贵计算时使用
+3. **组合胜过配置**：利用 shadcn/ui 的原子化组件与虚拟化库组合，而非构建一个臃肿的巨型组件
+4. **类型安全**：使用 TypeScript 泛型支持类型推断，避免运行时类型检查
+5. **渐进增强**：使用 Suspense 和 Streaming 提供更好的用户体验
+6. **状态管理分层**：全局状态用 Zustand，局部状态用 useState，避免状态提升过度
+
+## **七、 与 DataGrid 组件库的协同**
+
+参考 [DataGrid 组件库开发规则](mdc:datagrid.mdc) 了解：
+- Zustand Slice 模式的状态管理
+- TanStack Table 的列定义优化
+- 组件拆分和 Hooks 组织原则
+- 虚拟化和分页性能优化
+
+在开发 DataGrid 相关功能时，应同时遵循本规则和 DataGrid 规则。

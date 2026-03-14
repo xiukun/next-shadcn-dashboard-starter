@@ -4,10 +4,15 @@ import type { ColumnConfig } from '@maita-table/core';
 export interface ColumnVirtualizationOptions {
   columns: ColumnConfig[];
   columnsWidth?: Record<string, number>;
+  columnsPinned?: Record<string, 'left' | 'right' | undefined>;
   scrollLeft: number;
   containerWidth: number;
   defaultColumnWidth?: number;
   overscan?: number;
+  /**
+   * 选择列宽度（如果启用行选择）
+   */
+  selectionColumnWidth?: number;
 }
 
 export interface VirtualColumn {
@@ -16,12 +21,40 @@ export interface VirtualColumn {
   start: number;
   end: number;
   width: number;
+  /**
+   * 是否为固定列
+   */
+  pinned?: 'left' | 'right';
 }
 
 export interface ColumnVirtualizationResult {
+  /**
+   * 左固定列（始终可见）
+   */
+  leftPinnedColumns: VirtualColumn[];
+  /**
+   * 虚拟化的中间列（可见 + overscan）
+   */
   virtualColumns: VirtualColumn[];
+  /**
+   * 右固定列（始终可见）
+   */
+  rightPinnedColumns: VirtualColumn[];
+  /**
+   * 所有列的列表（用于渲染）
+   */
+  allColumns: VirtualColumn[];
+  /**
+   * 总宽度
+   */
   totalWidth: number;
+  /**
+   * 中间列区域的起始偏移量（用于 padding-left）
+   */
   startOffset: number;
+  /**
+   * 中间列区域的结束偏移量（用于 padding-right）
+   */
   endOffset: number;
 }
 
