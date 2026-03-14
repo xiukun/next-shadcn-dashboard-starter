@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import type { Virtualizer } from '@tanstack/react-virtual';
 import type { Row } from '@tanstack/react-table';
 import type { DataGridStore } from '../store';
 
@@ -25,7 +26,7 @@ export interface UseTableVirtualizationResult<Row> {
   /**
    * 行虚拟化器
    */
-  rowVirtualizer: ReturnType<typeof useVirtualizer>;
+  rowVirtualizer: Virtualizer<HTMLDivElement, Element>;
   /**
    * 虚拟化行项
    */

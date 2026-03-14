@@ -41,45 +41,57 @@ export function JsonRenderer({
 
   // Action handlers
   const actionHandlers = {
-    submit: (params: { formId?: string; data?: Record<string, unknown> }) => {
-      console.log('Form submitted:', params);
+    submit: (params: Record<string, unknown>) => {
+      const formId = params.formId as string | undefined;
+      const data = params.data as Record<string, unknown> | undefined;
+      console.log('Form submitted:', { formId, data });
       toast.success('表单已提交', {
-        description: params.formId ? `表单 ID: ${params.formId}` : undefined
+        description: formId ? `表单 ID: ${formId}` : undefined
       });
     },
-    navigate: (params: { url: string }) => {
-      console.log('Navigating to:', params.url);
-      router.push(params.url);
-    },
-    showToast: (params: {
-      message: string;
-      type?: 'success' | 'error' | 'info' | 'warning';
-      duration?: number;
-    }) => {
-      const { message, type = 'info', duration } = params;
-      switch (type) {
-        case 'success':
-          toast.success(message, { duration });
-          break;
-        case 'error':
-          toast.error(message, { duration });
-          break;
-        case 'warning':
-          toast.warning(message, { duration });
-          break;
-        default:
-          toast.info(message, { duration });
+    navigate: (params: Record<string, unknown>) => {
+      const url = params.url as string;
+      if (typeof url === 'string') {
+        console.log('Navigating to:', url);
+        router.push(url);
       }
     },
-    openDialog: (params: { dialogId: string }) => {
-      console.log('Opening dialog:', params.dialogId);
-      // 这里可以实现对话框打开逻辑
-      toast.info(`打开对话框: ${params.dialogId}`);
+    showToast: (params: Record<string, unknown>) => {
+      const message = params.message as string;
+      const type =
+        (params.type as 'success' | 'error' | 'info' | 'warning') || 'info';
+      const duration = params.duration as number | undefined;
+      if (typeof message === 'string') {
+        switch (type) {
+          case 'success':
+            toast.success(message, { duration });
+            break;
+          case 'error':
+            toast.error(message, { duration });
+            break;
+          case 'warning':
+            toast.warning(message, { duration });
+            break;
+          default:
+            toast.info(message, { duration });
+        }
+      }
     },
-    closeDialog: (params: { dialogId: string }) => {
-      console.log('Closing dialog:', params.dialogId);
-      // 这里可以实现对话框关闭逻辑
-      toast.info(`关闭对话框: ${params.dialogId}`);
+    openDialog: (params: Record<string, unknown>) => {
+      const dialogId = params.dialogId as string;
+      if (typeof dialogId === 'string') {
+        console.log('Opening dialog:', dialogId);
+        // 这里可以实现对话框打开逻辑
+        toast.info(`打开对话框: ${dialogId}`);
+      }
+    },
+    closeDialog: (params: Record<string, unknown>) => {
+      const dialogId = params.dialogId as string;
+      if (typeof dialogId === 'string') {
+        console.log('Closing dialog:', dialogId);
+        // 这里可以实现对话框关闭逻辑
+        toast.info(`关闭对话框: ${dialogId}`);
+      }
     }
   };
 

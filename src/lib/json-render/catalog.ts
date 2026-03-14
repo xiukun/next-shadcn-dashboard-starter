@@ -44,10 +44,6 @@ export const catalog = defineCatalog(schema, {
       ...shadcnComponentDefinitions.Textarea,
       description: '多行文本输入框组件'
     },
-    Label: {
-      ...shadcnComponentDefinitions.Label,
-      description: '标签组件，用于表单字段标签'
-    },
     Select: {
       ...shadcnComponentDefinitions.Select,
       description: '选择器组件，用于从选项列表中选择'
@@ -55,10 +51,6 @@ export const catalog = defineCatalog(schema, {
     Checkbox: {
       ...shadcnComponentDefinitions.Checkbox,
       description: '复选框组件，用于多选'
-    },
-    RadioGroup: {
-      ...shadcnComponentDefinitions.RadioGroup,
-      description: '单选组组件，用于单选'
     },
     Switch: {
       ...shadcnComponentDefinitions.Switch,
@@ -73,10 +65,6 @@ export const catalog = defineCatalog(schema, {
     Dialog: {
       ...shadcnComponentDefinitions.Dialog,
       description: '对话框组件，用于显示模态内容'
-    },
-    Sheet: {
-      ...shadcnComponentDefinitions.Sheet,
-      description: '侧边栏组件，用于从侧边滑出内容'
     },
     Popover: {
       ...shadcnComponentDefinitions.Popover,
@@ -109,7 +97,7 @@ export const catalog = defineCatalog(schema, {
     submit: {
       params: z.object({
         formId: z.string().describe('表单 ID'),
-        data: z.record(z.unknown()).optional().describe('表单数据')
+        data: z.record(z.string(), z.unknown()).optional().describe('表单数据')
       }),
       description: '提交表单数据'
     },

@@ -21,16 +21,13 @@ export const { registry } = defineRegistry(catalog, {
     Button: shadcnComponents.Button,
     Input: shadcnComponents.Input,
     Textarea: shadcnComponents.Textarea,
-    Label: shadcnComponents.Label,
     Select: shadcnComponents.Select,
     Checkbox: shadcnComponents.Checkbox,
-    RadioGroup: shadcnComponents.RadioGroup,
     Switch: shadcnComponents.Switch,
 
     // 反馈组件
     Alert: shadcnComponents.Alert,
     Dialog: shadcnComponents.Dialog,
-    Sheet: shadcnComponents.Sheet,
     Popover: shadcnComponents.Popover,
     Tooltip: shadcnComponents.Tooltip,
 
@@ -39,5 +36,13 @@ export const { registry } = defineRegistry(catalog, {
     Avatar: shadcnComponents.Avatar,
     Progress: shadcnComponents.Progress,
     Skeleton: shadcnComponents.Skeleton
+  },
+  actions: {
+    // Actions are handled by ActionProvider in components
+    submit: async () => {},
+    navigate: async () => {},
+    showToast: async () => {},
+    openDialog: async () => {},
+    closeDialog: async () => {}
   }
 });

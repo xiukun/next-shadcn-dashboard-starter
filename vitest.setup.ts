@@ -28,7 +28,6 @@ class ResizeObserverPolyfill {
   disconnect() {}
 }
 
-// @ts-expect-error - jsdom environment global augmentation
 globalThis.ResizeObserver = globalThis.ResizeObserver ?? ResizeObserverPolyfill;
 
 function readPx(value: string | null | undefined): number | undefined {

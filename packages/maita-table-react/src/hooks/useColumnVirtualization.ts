@@ -67,6 +67,7 @@ export function useColumnVirtualization(
   const {
     columns,
     columnsWidth = {},
+    columnsPinned = {},
     scrollLeft,
     containerWidth,
     defaultColumnWidth = DEFAULT_COLUMN_WIDTH,
@@ -80,6 +81,7 @@ export function useColumnVirtualization(
       index: number;
       start: number;
       width: number;
+      pinned?: 'left' | 'right';
     }> = [];
 
     let currentOffset = 0;
@@ -88,12 +90,14 @@ export function useColumnVirtualization(
       const width =
         columnsWidth[column.id] ??
         (typeof column.width === 'number' ? column.width : defaultColumnWidth);
+      const pinned = columnsPinned[column.id];
 
       columnOffsets.push({
         column,
         index,
         start: currentOffset,
-        width
+        width,
+        pinned
       });
 
       currentOffset += width;
@@ -101,7 +105,36 @@ export function useColumnVirtualization(
 
     const totalWidth = currentOffset;
 
-    // 计算可见列范围
+    // 分离固定列和普通列
+    const leftPinnedColumns: VirtualColumn[] = [];
+    const rightPinnedColumns: VirtualColumn[] = [];
+    const regularColumns: Array<{
+      column: ColumnConfig;
+      index: number;
+      start: number;
+      width: number;
+    }> = [];
+
+    columnOffsets.forEach((offset) => {
+      const virtualColumn: VirtualColumn = {
+        column: offset.column,
+        index: offset.index,
+        start: offset.start,
+        end: offset.start + offset.width,
+        width: offset.width,
+        pinned: offset.pinned
+      };
+
+      if (offset.pinned === 'left') {
+        leftPinnedColumns.push(virtualColumn);
+      } else if (offset.pinned === 'right') {
+        rightPinnedColumns.push(virtualColumn);
+      } else {
+        regularColumns.push(offset);
+      }
+    });
+
+    // 计算可见列范围（仅针对普通列）
     const viewportStart = scrollLeft;
     const viewportEnd = scrollLeft + containerWidth;
 
@@ -114,28 +147,28 @@ export function useColumnVirtualization(
 
     // 找到可见列的起始和结束索引
     let startIndex = 0;
-    let endIndex = columns.length - 1;
+    let endIndex = regularColumns.length - 1;
 
-    for (let i = 0; i < columnOffsets.length; i++) {
-      const offset = columnOffsets[i]!;
+    for (let i = 0; i < regularColumns.length; i++) {
+      const offset = regularColumns[i]!;
       if (offset.start + offset.width >= overscanStart) {
         startIndex = Math.max(0, i - 1);
         break;
       }
     }
 
-    for (let i = columnOffsets.length - 1; i >= 0; i--) {
-      const offset = columnOffsets[i]!;
+    for (let i = regularColumns.length - 1; i >= 0; i--) {
+      const offset = regularColumns[i]!;
       if (offset.start <= overscanEnd) {
-        endIndex = Math.min(columns.length - 1, i + 1);
+        endIndex = Math.min(regularColumns.length - 1, i + 1);
         break;
       }
     }
 
-    // 生成虚拟列
+    // 生成虚拟列（仅普通列）
     const virtualColumns: VirtualColumn[] = [];
     for (let i = startIndex; i <= endIndex; i++) {
-      const offset = columnOffsets[i];
+      const offset = regularColumns[i];
       if (offset) {
         virtualColumns.push({
           column: offset.column,
@@ -148,15 +181,28 @@ export function useColumnVirtualization(
     }
 
     // 计算前后填充偏移量
-    const startOffset = startIndex > 0 ? columnOffsets[startIndex]!.start : 0;
+    const startOffset =
+      startIndex > 0 && regularColumns[startIndex]
+        ? regularColumns[startIndex]!.start
+        : 0;
     const endOffset =
-      endIndex < columnOffsets.length - 1
+      endIndex < regularColumns.length - 1 && regularColumns[endIndex]
         ? totalWidth -
-          (columnOffsets[endIndex]!.start + columnOffsets[endIndex]!.width)
+          (regularColumns[endIndex]!.start + regularColumns[endIndex]!.width)
         : 0;
 
+    // 生成所有列的列表
+    const allColumns: VirtualColumn[] = [
+      ...leftPinnedColumns,
+      ...virtualColumns,
+      ...rightPinnedColumns
+    ];
+
     return {
+      leftPinnedColumns,
       virtualColumns,
+      rightPinnedColumns,
+      allColumns,
       totalWidth,
       startOffset,
       endOffset
@@ -164,6 +210,7 @@ export function useColumnVirtualization(
   }, [
     columns,
     columnsWidth,
+    columnsPinned,
     scrollLeft,
     containerWidth,
     defaultColumnWidth,

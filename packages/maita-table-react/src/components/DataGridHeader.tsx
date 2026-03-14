@@ -10,10 +10,8 @@ import { FilterPopover } from './FilterPopover';
 import { ColumnMenu, type ColumnMenuLabels } from './ColumnMenu';
 import { HeaderSelectionCheckbox } from './SelectionCheckbox';
 import type { DataGridStore } from '../store';
-import type {
-  UseColumnSortingResult,
-  UseColumnFilteringResult
-} from '../hooks/useColumnSorting';
+import type { UseColumnSortingResult } from '../hooks/useColumnSorting';
+import type { UseColumnFilteringResult } from '../hooks/useColumnFiltering';
 import type { UseRowSelectionResult } from '../hooks/useRowSelection';
 
 export interface DataGridHeaderProps<Row> {
