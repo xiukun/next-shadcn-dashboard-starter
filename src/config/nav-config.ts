@@ -76,6 +76,14 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
+    title: 'table performance demo',
+    url: '/dashboard/table-performance-demo',
+    icon: 'table',
+    shortcut: ['d', 'p'],
+    isActive: false,
+    items: []
+  },
+  {
     title: 'Product',
     url: '/dashboard/product',
     icon: 'product',

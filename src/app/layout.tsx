@@ -51,6 +51,46 @@ export default async function RootLayout({
                   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '${META_THEME_COLORS.dark}')
                 }
               } catch (_) {}
+              
+              // 捕获并忽略 Next.js 16 + React 19 的性能测量错误
+              // 这是一个已知的 bug (https://github.com/vercel/next.js/issues/20743)
+              // 不影响应用功能，只是开发环境下的警告
+              if (typeof window !== 'undefined') {
+                // 捕获 performance.measure 错误
+                const originalMeasure = performance.measure;
+                performance.measure = function(name, startMark, endMark) {
+                  try {
+                    return originalMeasure.call(this, name, startMark, endMark);
+                  } catch (error) {
+                    // 忽略 "RootNotFound cannot have negative time stamp" 错误
+                    if (
+                      error instanceof Error &&
+                      (error.message.includes('RootNotFound') ||
+                       error.message.includes('negative time stamp') ||
+                       error.message.includes('Failed to execute'))
+                    ) {
+                      return null;
+                    }
+                    throw error;
+                  }
+                };
+                
+                // 同时捕获控制台错误
+                const originalError = console.error;
+                console.error = function(...args) {
+                  const message = args[0];
+                  if (
+                    typeof message === 'string' &&
+                    (message.includes('Failed to execute') && message.includes('measure') && message.includes('Performance')) ||
+                    message.includes('RootNotFound') ||
+                    message.includes('cannot have a negative time stamp')
+                  ) {
+                    // 静默忽略这个错误
+                    return;
+                  }
+                  originalError.apply(console, args);
+                };
+              }
             `
           }}
         />

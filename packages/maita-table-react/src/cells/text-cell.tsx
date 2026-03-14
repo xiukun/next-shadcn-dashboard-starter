@@ -109,7 +109,7 @@ export function TextCell(props: TextCellProps) {
         placeholder={meta?.placeholder as string | undefined}
         onChange={(e) => onChangeDraft(e.target.value)}
         onKeyDown={handleKeyDown}
-        title={error}
+        title={error ?? undefined}
       />
     </td>
   );

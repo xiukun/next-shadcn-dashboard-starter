@@ -11,3 +11,4 @@ export * from './components/FilterPopover';
 export * from './components/ColumnMenu';
 export { useColumnSorting } from './hooks/useColumnSorting';
 export { useColumnFiltering } from './hooks/useColumnFiltering';
+export { exportToCSV, exportSelectedRowsToCSV } from './utils/export';

@@ -189,7 +189,7 @@ export function NumberCell(props: NumberCellProps) {
         value={effectiveDraft}
         onChange={(e) => onChangeDraft(e.target.value)}
         onKeyDown={handleKeyDown}
-        title={error}
+        title={error ?? undefined}
       />
     </td>
   );
