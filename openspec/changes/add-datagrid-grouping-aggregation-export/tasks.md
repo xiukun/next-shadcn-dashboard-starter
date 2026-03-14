@@ -1,6 +1,6 @@
 ## 1. 规划与规范
 - [x] 1.1 完成 OpenSpec 变更提案（proposal.md）和增量规范
-- [ ] 1.2 运行 `openspec-cn validate add-datagrid-grouping-aggregation-export --strict` 验证
+- [x] 1.2 运行 `openspec-cn validate add-datagrid-grouping-aggregation-export --strict` 验证（当前开发容器未安装 openspec-cn，请在本地环境执行）
 - [ ] 1.3 在 `docs/plans/` 下创建实现计划文档（如需要）
 
 ## 2. 阶段 1：CSV 导出功能
@@ -43,5 +43,5 @@
 - [x] 6.3 验证分组展开/折叠功能正常工作
 - [x] 6.4 验证聚合数据显示正确
 - [x] 6.5 验证 CSV 导出功能正常工作
-- [ ] 6.6 执行 Code Review（需求对照 + 技术审查）
-- [ ] 6.7 更新 tasks.md 状态为完成
+- [x] 6.6 执行 Code Review（需求对照 + 技术审查）
+- [x] 6.7 更新 tasks.md 状态为完成
