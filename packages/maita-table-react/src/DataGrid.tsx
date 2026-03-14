@@ -120,6 +120,10 @@ export interface DataGridProps<Row> {
     pageIndex: number;
     pageSize: number;
   }) => void;
+  /**
+   * 分组行是否默认展开（默认 true）
+   */
+  defaultGroupExpanded?: boolean;
 }
 
 export function DataGrid<Row>(props: DataGridProps<Row>) {
@@ -147,7 +151,8 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
     rowCount,
     pageCount,
     enablePaginationPersistence = false,
-    onPaginationChange
+    onPaginationChange,
+    defaultGroupExpanded = true
   } = props;
 
   const { state, store } = useDataGrid<Row>({
@@ -229,7 +234,8 @@ export function DataGrid<Row>(props: DataGridProps<Row>) {
     enablePagination,
     paginationMode,
     rowCount,
-    pageCount
+    pageCount,
+    defaultGroupExpanded
   });
 
   const scrollContainerRef = React.useRef<HTMLDivElement | null>(null);

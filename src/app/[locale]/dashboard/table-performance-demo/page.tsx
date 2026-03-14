@@ -200,7 +200,11 @@ export default function Page() {
         enableFiltering: true,
         filterType: 'number',
         enableFloatingFilter: true,
-        filterPlaceholder: '过滤 ID...'
+        filterPlaceholder: '过滤 ID...',
+        enableAggregation: true,
+        defaultAggregation: 'avg',
+        aggregationFormatter: (value: number, type: string) =>
+          `${type === 'avg' ? '平均' : '汇总'}薪资：${value.toLocaleString()}`
       }
     },
     {
@@ -235,7 +239,9 @@ export default function Page() {
       meta: {
         enableFiltering: true,
         filterType: 'text',
-        enableFloatingFilter: false
+        enableFloatingFilter: false,
+        // 自定义分组显示名称
+        groupDisplayName: '部门分组'
       }
     },
     {
@@ -250,7 +256,11 @@ export default function Page() {
         enableFloatingFilter: true,
         filterPlaceholder: '过滤薪资...',
         align: 'right',
-        format: (value: unknown) => `$${Number(value).toLocaleString()}`
+        format: (value: unknown) => `$${Number(value).toLocaleString()}`,
+        enableAggregation: true,
+        defaultAggregation: 'avg',
+        aggregationFormatter: (value: number, type: string) =>
+          `${type === 'avg' ? '平均' : '汇总'}绩效：${value.toFixed(1)}`
       }
     },
     {
@@ -264,7 +274,11 @@ export default function Page() {
         filterType: 'number',
         enableFloatingFilter: true,
         filterPlaceholder: '过滤年龄...',
-        align: 'right'
+        align: 'right',
+        enableAggregation: true,
+        defaultAggregation: 'sum',
+        aggregationFormatter: (value: number, type: string) =>
+          `${type === 'sum' ? '总项目数' : '项目数'}：${value}`
       }
     },
     {
@@ -443,8 +457,8 @@ export default function Page() {
             </div>
             {renderTime && (
               <div className='text-muted-foreground text-xs'>
-                渲染时间:{' '}
-                <Badge variant='secondary'>{renderTime.toFixed(2)}ms</Badge>
+                渲染时间:
+                {<Badge variant='secondary'>{renderTime.toFixed(2)}ms</Badge>}
               </div>
             )}
           </CardContent>
@@ -502,7 +516,9 @@ export default function Page() {
             dataSource={dataSource}
             initialViewState={{
               pageSize: 50,
-              columnsPinned: { id: 'left', name: 'left' }
+              columnsPinned: { id: 'left', name: 'left' },
+              // 默认按部门分组，便于观察分组效果
+              groupBy: ['department']
             }}
             showHeaderVerticalDividers
             CheckboxComponent={Checkbox}
@@ -516,6 +532,7 @@ export default function Page() {
             initialPageIndex={0}
             initialPageSize={50}
             pageSizeOptions={[20, 50, 100, 200]}
+            defaultGroupExpanded={true}
             columnMenuLabels={{
               sortAsc: t('columnMenu.sortAsc'),
               sortDesc: t('columnMenu.sortDesc'),
@@ -567,15 +584,15 @@ export default function Page() {
               <span>分页（Pagination）</span>
             </div>
             <div className='flex items-center gap-2'>
-              <Badge variant='secondary'>❌</Badge>
+              <Badge variant='default'>✅</Badge>
               <span>CSV 导出（CSV Export）</span>
             </div>
             <div className='flex items-center gap-2'>
-              <Badge variant='secondary'>❌</Badge>
+              <Badge variant='default'>✅</Badge>
               <span>行分组（Row Grouping）</span>
             </div>
             <div className='flex items-center gap-2'>
-              <Badge variant='secondary'>❌</Badge>
+              <Badge variant='default'>✅</Badge>
               <span>列聚合（Column Aggregation）</span>
             </div>
           </div>

@@ -7,6 +7,8 @@ import {
   getSortedRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
+  getGroupedRowModel,
+  getExpandedRowModel,
   type ColumnDef,
   type TableOptions
 } from '@tanstack/react-table';
@@ -31,6 +33,10 @@ export interface UseTableInstanceOptions<Row> {
    * 总页数（服务端分页时可选）
    */
   pageCount?: number;
+  /**
+   * 分组行是否默认展开（默认 true）
+   */
+  defaultGroupExpanded?: boolean;
 }
 
 /**
@@ -43,13 +49,19 @@ export function useTableInstance<Row>(options: UseTableInstanceOptions<Row>) {
     enablePagination = false,
     paginationMode = 'client',
     rowCount,
-    pageCount
+    pageCount,
+    defaultGroupExpanded = true
   } = options;
 
   // 订阅状态变化
   const viewState = store((state) => state.view);
   const paginationState = store((state) => state.pagination);
   const dataRows = store((state) => state.data.rows);
+
+  // 分组状态（目前仅支持按列 ID 分组，顺序与 GroupState 一致）
+  const grouping = useMemo(() => {
+    return viewState.groupBy ?? [];
+  }, [viewState.groupBy]);
 
   // 将排序状态转换为 TanStack Table 格式
   const tanStackSorting = useMemo(() => {
@@ -86,10 +98,15 @@ export function useTableInstance<Row>(options: UseTableInstanceOptions<Row>) {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getGroupedRowModel: getGroupedRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
     state: {
       sorting: tanStackSorting,
-      columnFilters: tanStackColumnFilters
+      columnFilters: tanStackColumnFilters,
+      grouping
     },
+    // 仅用于设置“默认”展开状态，后续交互完全交给 TanStack Table 内部管理
+    initialState: defaultGroupExpanded ? { expanded: true } : {},
     onSortingChange: () => {
       // 排序状态通过 useColumnSorting hook 管理
       // TanStack Table 的排序主要用于前端计算和 UI 反馈

@@ -2,7 +2,7 @@
 
 import { useMemo, useCallback } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
-import type { ColumnConfig } from '@maita-table/core';
+import type { ColumnConfig, ColumnMeta } from '@maita-table/core';
 import type { DataGridStore } from '../store';
 
 export interface UseTableColumnsOptions<Row> {
@@ -74,10 +74,20 @@ export function useTableColumns<Row>(
   const createColumnDefs = useCallback(
     (cols: ColumnConfig<Row>[]): Array<ColumnDef<Row>> => {
       return cols.map((col) => {
+        const meta = (col.meta || {}) as ColumnMeta<Row, unknown>;
+
+        const enableGrouping = meta.enableGrouping ?? col.groupable ?? true;
+
+        const enableAggregation = meta.enableAggregation ?? false;
+
         return {
           id: col.id,
           header: () => col.header,
           accessorFn: (row) => col.accessor(row),
+          // 是否允许该列参与分组（是否出现在 groupBy 中）
+          enableGrouping,
+          // 是否允许该列参与聚合（影响聚合行是否渲染该列的聚合值）
+          enableAggregation,
           meta: col.meta as any
         };
       });

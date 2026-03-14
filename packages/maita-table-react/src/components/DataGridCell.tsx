@@ -105,7 +105,6 @@ export function DataGridCell<TRow>(props: DataGridCellProps<TRow>) {
   // 优先使用手动调整的宽度，其次使用列配置的宽度，最后使用默认宽度150px
   const columnWidth =
     width ?? (typeof column.width === 'number' ? column.width : 150);
-
   const cellStickyStyle: React.CSSProperties =
     pinned === 'left'
       ? {
@@ -132,6 +131,88 @@ export function DataGridCell<TRow>(props: DataGridCellProps<TRow>) {
             transition: 'background-color 0.15s ease-in-out'
           }
         : {};
+
+  // === 分组相关状态 ===
+  const isGroupedRow =
+    typeof row.getIsGrouped === 'function' && row.getIsGrouped();
+  const isPlaceholderCell =
+    typeof cell.getIsPlaceholder === 'function' && cell.getIsPlaceholder();
+  const isAggregatedCell =
+    typeof cell.getIsAggregated === 'function' && cell.getIsAggregated();
+
+  // 占位单元格（用于对齐分组行）
+  if (isPlaceholderCell) {
+    return <td key={cell.id} className='mt-grid-td' style={cellStickyStyle} />;
+  }
+
+  // 分组头单元格：展示分组值 + 子行数量，并提供展开/收起交互
+  if (
+    isGroupedRow &&
+    typeof cell.getIsGrouped === 'function' &&
+    cell.getIsGrouped()
+  ) {
+    const subRowCount = row.subRows?.length ?? 0;
+
+    return (
+      <td
+        key={cell.id}
+        className='mt-grid-td bg-muted/60 text-sm font-medium'
+        style={{
+          ...cellStickyStyle,
+          // 根据分组层级缩进
+          paddingLeft: 12 + (row.depth || 0) * 16
+        }}
+      >
+        <button
+          type='button'
+          onClick={row.getToggleExpandedHandler()}
+          className='mr-2 inline-flex h-5 w-5 items-center justify-center rounded border text-[10px]'
+          aria-label={row.getIsExpanded() ? '折叠分组' : '展开分组'}
+        >
+          {row.getIsExpanded() ? '-' : '+'}
+        </button>
+        <span>{flexRender(cell.column.columnDef.cell, cell.getContext())}</span>
+        <span className='text-muted-foreground ml-2 text-xs'>
+          ({subRowCount})
+        </span>
+      </td>
+    );
+  }
+
+  // 聚合单元格：用于展示分组后的汇总值（支持按列元数据开关与格式化）
+  if (isAggregatedCell) {
+    const aggregateEnabled = (meta?.enableAggregation ?? false) === true;
+
+    if (!aggregateEnabled) {
+      // 不启用聚合展示时，保持单元格为空以避免误解
+      return (
+        <td key={cell.id} className='mt-grid-td' style={cellStickyStyle} />
+      );
+    }
+
+    const rawValue = cell.getValue() as unknown;
+    let displayValue: React.ReactNode = rawValue as React.ReactNode;
+
+    if (
+      typeof rawValue === 'number' &&
+      typeof meta?.aggregationFormatter === 'function'
+    ) {
+      displayValue = meta.aggregationFormatter(
+        rawValue,
+        meta.defaultAggregation ?? 'sum'
+      );
+    }
+
+    return (
+      <td
+        key={cell.id}
+        className='mt-grid-td bg-muted/40 text-muted-foreground text-xs'
+        style={cellStickyStyle}
+      >
+        {displayValue}
+      </td>
+    );
+  }
 
   const drafts = state.runtime.editingDraftValues;
   const draftValue =
